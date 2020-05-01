@@ -30,6 +30,9 @@
 # Python byte code
 *.pyc
 
+#VSCode editor
+.vscode
+
 #PyCharm IDE
 .idea
 
