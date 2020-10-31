@@ -110,6 +110,9 @@ protected:
   // publish free objects
   void publish_objects_in_scene();
 
+  // set free objects
+  void set_objects_in_scene_callback(const mujoco_ros_msgs::ModelStates& model_states_msg);
+
   // transform type id to type name
   std::string geom_type_to_string(int geom_id);
 
@@ -153,6 +156,10 @@ protected:
   // publishing
   ros::Publisher objects_in_scene_publisher = robot_node_handle.advertise<mujoco_ros_msgs::ModelStates>
                                                                          ("/mujoco/model_states", 1000);
+
+  // // subscribing
+  // ros::Subscriber set_objects_in_scene_subscriber = robot_node_handle.subscribe("/mujoco/set_model_state", 1000, MujocoRosControl::set_objects_in_scene_callback);
+
 };
 }  // namespace mujoco_ros_control
 #endif  // MUJOCO_ROS_CONTROL_MUJOCO_ROS_CONTROL_H

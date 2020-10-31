@@ -244,17 +244,19 @@ void RobotHWSim::read(const ros::Time& time, const ros::Duration& period)
   for (auto& joint_item : joints_)
   {
     JointData& joint = joint_item.second;
-    if (string_ends_with(joint.name, "FJ1") || string_ends_with(joint.name, "FJ2"))
-    {
-      std::string actuator_name = joint.name;
-      actuator_name[actuator_name.size() - 1] = '0';
-      MujocoActuatorData& actuator = mujoco_actuators_.at(actuator_name);
-      joint.effort = mujoco_data_->qfrc_actuator[actuator.id]/2;
-    }
-    else
-    {
-      joint.effort = mujoco_data_->qfrc_applied[joint.mujoco_qvel_addr];
-    }
+    // Shadow Hand
+    // if (string_ends_with(joint.name, "FJ1") || string_ends_with(joint.name, "FJ2"))
+    // {
+    //   std::string actuator_name = joint.name;
+    //   actuator_name[actuator_name.size() - 1] = '0';
+    //   MujocoActuatorData& actuator = mujoco_actuators_.at(actuator_name);
+    //   joint.effort = mujoco_data_->qfrc_actuator[actuator.id]/2;
+    // }
+    // else
+    // {
+    //   joint.effort = mujoco_data_->qfrc_applied[joint.mujoco_qvel_addr];
+    // }
+    joint.effort = mujoco_data_->qfrc_applied[joint.mujoco_qvel_addr];
     if (joint.type == urdf::Joint::PRISMATIC)
     {
       joint.position = mujoco_data_->qpos[joint.mujoco_qpos_addr];
@@ -279,50 +281,51 @@ void RobotHWSim::write(const ros::Time& time, const ros::Duration& period)
 
   for (auto& actuator : mujoco_actuators_)
   {
-    if (string_ends_with(actuator.first, "FJ0"))
-    {
-      std::string joint_1_name = actuator.first;
-      std::string joint_2_name = actuator.first;
-      joint_1_name[joint_1_name.size() - 1] = '1';
-      joint_2_name[joint_2_name.size() - 1] = '2';
-      JointData& joint_1 = joints_.at(joint_1_name);
-      JointData& joint_2 = joints_.at(joint_2_name);
-      switch (joint_1.control_method)
-      {
-        case EFFORT:
-        {
-          mujoco_data_->ctrl[actuator.second.id] = joint_1.effort_command + joint_2.effort_command;
-          break;
-        }
+    // Shadow Hand
+    // if (string_ends_with(actuator.first, "FJ0"))
+    // {
+    //   std::string joint_1_name = actuator.first;
+    //   std::string joint_2_name = actuator.first;
+    //   joint_1_name[joint_1_name.size() - 1] = '1';
+    //   joint_2_name[joint_2_name.size() - 1] = '2';
+    //   JointData& joint_1 = joints_.at(joint_1_name);
+    //   JointData& joint_2 = joints_.at(joint_2_name);
+    //   switch (joint_1.control_method)
+    //   {
+    //     case EFFORT:
+    //     {
+    //       mujoco_data_->ctrl[actuator.second.id] = joint_1.effort_command + joint_2.effort_command;
+    //       break;
+    //     }
 
-        case POSITION:
-          mujoco_data_->ctrl[actuator.second.id] = joint_1.position_command + joint_2.position_command;
-          break;
+    //     case POSITION:
+    //       mujoco_data_->ctrl[actuator.second.id] = joint_1.position_command + joint_2.position_command;
+    //       break;
 
-        case POSITION_PID:
-        {
-          mujoco_data_->ctrl[actuator.second.id] =
-            clamp(joint_1.pid_controller.computeCommand(joint_1.position_command - joint_1.position, period),
-                  -joint_1.effort_limit, joint_1.effort_limit) +
-            clamp(joint_2.pid_controller.computeCommand(joint_2.position_command - joint_2.position, period),
-                  -joint_2.effort_limit, joint_2.effort_limit);
-          break;
-        }
+    //     case POSITION_PID:
+    //     {
+    //       mujoco_data_->ctrl[actuator.second.id] =
+    //         clamp(joint_1.pid_controller.computeCommand(joint_1.position_command - joint_1.position, period),
+    //               -joint_1.effort_limit, joint_1.effort_limit) +
+    //         clamp(joint_2.pid_controller.computeCommand(joint_2.position_command - joint_2.position, period),
+    //               -joint_2.effort_limit, joint_2.effort_limit);
+    //       break;
+    //     }
 
-        case VELOCITY:
-          mujoco_data_->ctrl[actuator.second.id] = joint_1.velocity_command + joint_2.velocity_command;
-          break;
+    //     case VELOCITY:
+    //       mujoco_data_->ctrl[actuator.second.id] = joint_1.velocity_command + joint_2.velocity_command;
+    //       break;
 
-        case VELOCITY_PID:
-          mujoco_data_->ctrl[actuator.second.id] =
-            clamp(joint_1.pid_controller.computeCommand(joint_1.velocity_command - joint_1.velocity, period),
-                  -joint_1.effort_limit, joint_1.effort_limit) +
-            clamp(joint_2.pid_controller.computeCommand(joint_2.velocity_command - joint_2.velocity, period),
-                  -joint_2.effort_limit, joint_2.effort_limit);
-          break;
-      }
-      continue;
-    }
+    //     case VELOCITY_PID:
+    //       mujoco_data_->ctrl[actuator.second.id] =
+    //         clamp(joint_1.pid_controller.computeCommand(joint_1.velocity_command - joint_1.velocity, period),
+    //               -joint_1.effort_limit, joint_1.effort_limit) +
+    //         clamp(joint_2.pid_controller.computeCommand(joint_2.velocity_command - joint_2.velocity, period),
+    //               -joint_2.effort_limit, joint_2.effort_limit);
+    //       break;
+    //   }
+    //   continue;
+    // }
     for (auto& joint_item : joints_)
     {
       JointData& joint = joint_item.second;

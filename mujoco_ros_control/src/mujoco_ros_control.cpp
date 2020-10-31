@@ -187,6 +187,8 @@ bool MujocoRosControl::init(ros::NodeHandle &nodehandle)
 void MujocoRosControl::setup_sim_environment()
 {
   XmlRpc::XmlRpcValue robot_joints, robot_initial_state;
+  int joint_id;
+  int joint_qpos_addr;
   bool params_read_correctly = true;
 
   if (!robot_node_handle.getParam("robot_joints", robot_joints))
@@ -194,6 +196,9 @@ void MujocoRosControl::setup_sim_environment()
     ROS_WARN("Failed to get param 'robot_joints'");
     params_read_correctly = false;
   }
+
+  // reset simulation
+  mj_resetData(mujoco_model, mujoco_data);
 
   if (params_read_correctly && robot_node_handle.getParam("robot_initial_state", robot_initial_state))
   {
@@ -203,7 +208,9 @@ void MujocoRosControl::setup_sim_environment()
       {
         if (robot_joints[i] == it->first)
         {
-          mujoco_data->qpos[i] = it->second;
+          joint_id = mj_name2id(mujoco_model, mjOBJ_JOINT, it->first.c_str());
+          joint_qpos_addr = mujoco_model->jnt_qposadr[joint_id];
+          mujoco_data->qpos[joint_qpos_addr] = it->second;
         }
       }
     }
@@ -216,9 +223,13 @@ void MujocoRosControl::setup_sim_environment()
 
   if (!params_read_correctly)
   {
-    for (int i=0; i < n_dof_-objects_in_scene_.size(); i++)
+    for (int i = 0; i < n_dof_; i++)
     {
-      mujoco_data->qpos[i] = 0;
+      if (mujoco_model->jnt_type[i] != mjJNT_FREE && mujoco_model->jnt_type[i] != mjJNT_BALL)
+      {
+        joint_qpos_addr = mujoco_model->jnt_qposadr[i];
+        mujoco_data->qpos[joint_qpos_addr] = 0;
+      }
     }
   }
 
@@ -429,6 +440,38 @@ void MujocoRosControl::publish_objects_in_scene()
 
   objects_in_scene_publisher.publish(objects);
 }
+
+void MujocoRosControl::set_objects_in_scene_callback(const mujoco_ros_msgs::ModelStates& model_states_msg)
+{
+  int object_id;
+  int joint_id;
+  int joint_qpos_addr;
+
+  for (int i = 0; i < model_states_msg.name.size(); i++)
+  {
+    object_id = mj_name2id(mujoco_model, mjOBJ_BODY, model_states_msg.name[i].c_str());
+    joint_id = mujoco_model->body_jntadr[object_id];
+    joint_qpos_addr = mujoco_model->jnt_qposadr[joint_id];
+    if (mujoco_model->jnt_type[joint_id] == mjJNT_FREE)
+    {
+      // position
+      mujoco_data->qpos[joint_qpos_addr] = model_states_msg.pose[i].position.x;
+      mujoco_data->qpos[joint_qpos_addr + 1] = model_states_msg.pose[i].position.y;
+      mujoco_data->qpos[joint_qpos_addr + 2] = model_states_msg.pose[i].position.z;
+
+      // orientation
+      mujoco_data->qpos[joint_qpos_addr + 3] = model_states_msg.pose[i].orientation.w;
+      mujoco_data->qpos[joint_qpos_addr + 4] = model_states_msg.pose[i].orientation.x;
+      mujoco_data->qpos[joint_qpos_addr + 5] = model_states_msg.pose[i].orientation.y;
+      mujoco_data->qpos[joint_qpos_addr + 6] = model_states_msg.pose[i].orientation.z;
+    }
+    else
+    {
+      ROS_WARN("Only objects with free joints can be set!");
+    }
+  }
+}
+
 }  // namespace mujoco_ros_control
 
 int main(int argc, char** argv)
