@@ -92,14 +92,17 @@ bool MujocoRosControl::init(ros::NodeHandle &nodehandle)
       return false;
     }
 
-    if (nodehandle.getParam("mujoco_ros_control/robot_model_path", robot_model_path_))
-    {
-      ROS_INFO("Got param: %s", robot_model_path_.c_str());
-    }
-    else
-    {
-      ROS_ERROR("Failed to get param 'robot_model_path'");
-    }
+    while(!nodehandle.hasParam("mujoco_model_xml") && ros::ok) true;
+    // nodehandle.getParam("mujoco_model_xml", robot_model_pa)
+
+    // if (nodehandle.getParam("mujoco_ros_control/robot_model_path", robot_model_path_))
+    // {
+    //   ROS_INFO("Got param: %s", robot_model_path_.c_str());
+    // }
+    // else
+    // {
+    //   ROS_ERROR("Failed to get param 'robot_model_path'");
+    // }
 
     char error[1000];
 
