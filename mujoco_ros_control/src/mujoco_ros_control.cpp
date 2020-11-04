@@ -92,8 +92,17 @@ bool MujocoRosControl::init(ros::NodeHandle &nodehandle)
       return false;
     }
 
-    while(!nodehandle.hasParam("mujoco_model_xml") && ros::ok) true;
-    // nodehandle.getParam("mujoco_model_xml", robot_model_pa)
+    // read xml from ros parameter server
+    const std::string xml_string = get_mujoco_xml("mujoco_model_xml");
+
+    std::string tmp_filename("/tmp/tmp_mujoco_xml.XXXXXX");
+    int tmp_fd = mkstemp((char *)tmp_filename.c_str());
+    if (tmp_fd == -1) {
+      ROS_ERROR_NAMED("mujoco_ros_control", "Error creating temporary xml file\n");
+      return false;
+    }
+    write(tmp_fd, xml_string.c_str(), xml_string.length());
+    close(tmp_fd);
 
     // if (nodehandle.getParam("mujoco_ros_control/robot_model_path", robot_model_path_))
     // {
@@ -107,12 +116,15 @@ bool MujocoRosControl::init(ros::NodeHandle &nodehandle)
     char error[1000];
 
     // create mjModel
-    mujoco_model = mj_loadXML(robot_model_path_.c_str(), NULL, error, 1000);
+    // mujoco_model = mj_loadXML(robot_model_path_.c_str(), NULL, error, 1000);
+    mujoco_model = mj_loadXML(tmp_filename.c_str(), NULL, error, 1000);
     if (!mujoco_model)
     {
       printf("Could not load mujoco model with error: %s.\n", error);
       return false;
     }
+
+    // unlink(tmp_filename.c_str());// delete temporary file
 
     // create mjData corresponding to mjModel
     mujoco_data = mj_makeData(mujoco_model);
@@ -276,6 +288,35 @@ void MujocoRosControl::update()
   mj_step2(mujoco_model, mujoco_data);
 
   publish_objects_in_scene();
+}
+
+// get the MuJoCo XML from the parameter server
+std::string MujocoRosControl::get_mujoco_xml(std::string param_name) const
+{
+  std::string xml_string;
+  while (xml_string.empty())
+  {
+    std::string search_param_name;
+    if (robot_node_handle.searchParam(param_name, search_param_name))
+    {
+      ROS_INFO_ONCE_NAMED("mujoco_ros_control", "mujoco_ros_control is waiting for model"
+        " XML in parameter [%s] on the ROS param server.", search_param_name.c_str());
+
+      robot_node_handle.getParam(search_param_name, xml_string);
+    }
+    else
+    {
+      ROS_INFO_ONCE_NAMED("mujoco_ros_control", "mujoco_ros_control is waiting for model"
+        " XML in parameter [%s] on the ROS param server.", robot_model_xml_.c_str());
+
+      robot_node_handle.getParam(param_name, xml_string);
+    }
+
+    usleep(100000);
+  }
+  ROS_INFO_STREAM_NAMED("mujoco_ros_control", "Received XML from param server, parsing...");
+
+  return xml_string;
 }
 
 // get the URDF XML from the parameter server

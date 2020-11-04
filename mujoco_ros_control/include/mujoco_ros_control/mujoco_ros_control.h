@@ -89,6 +89,9 @@ protected:
   // free or static object
   enum Object_State { STATIC = true, FREE = false };
 
+  // get the MuJoCo XML from the parameter server
+  std::string get_mujoco_xml(std::string param_name) const;
+
   // get the URDF XML from the parameter server
   std::string get_urdf(std::string param_name) const;
 
@@ -126,6 +129,7 @@ protected:
   std::string robot_namespace_;
   std::string robot_description_param_;
   std::string robot_model_path_;
+  std::string robot_model_xml_;
   std::string key_path_ = "/home/yee/.mujoco/mujoco200/bin/mjkey.txt";
 
   // vectors
