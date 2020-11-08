@@ -104,6 +104,9 @@ protected:
   // get number of degrees of freedom
   void get_number_of_dofs();
 
+  // extract name2idx and idx2name parameters
+  std::vector<XmlRpc::XmlRpcValue> extract_name_index_parameters(int *name_adr, int n, mjtObj obj_type);
+
   // set mujoco model parameters
   void set_model_parameters();
 

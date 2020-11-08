@@ -429,13 +429,34 @@ void MujocoRosControl::get_number_of_dofs()
   n_dof_ = mujoco_model->njnt;
 }
 
+std::vector<XmlRpc::XmlRpcValue> MujocoRosControl::extract_name_index_parameters(int *name_adr, int n, mjtObj obj_type)
+{
+  int id;
+  std::string name;
+  XmlRpc::XmlRpcValue name2id;
+  XmlRpc::XmlRpcValue id2name;
+
+  for (int i = 0; i < n; i++)
+  {
+    name = mujoco_model->names + name_adr[i];
+    if (name.length() > 0)
+    {
+      id = mj_name2id(mujoco_model, obj_type, name.c_str());
+      name2id[name] = id;
+      id2name[id] = name;
+    }
+  }
+
+  return {name2id, id2name};
+}
+
 void MujocoRosControl::set_model_parameters()
 {
   // timestep
   robot_node_handle.setParam("mujoco_ros/timestep", mujoco_model->opt.timestep);
 
-  // joint_pos_indexes, joint_vel_indexes, joint_indexes
-  XmlRpc::XmlRpcValue joint_pos_indexes, joint_vel_indexes, joint_indexes;
+  // joint_pos_indexes, joint_vel_indexes
+  XmlRpc::XmlRpcValue joint_pos_indexes, joint_vel_indexes;
   std::string joint_name;
   int joint_type, pos_ndim, vel_ndim, joint_qpos_addr, joint_qvel_addr;
 
@@ -487,80 +508,63 @@ void MujocoRosControl::set_model_parameters()
       joint_qvel_addr_vec[1] = joint_qvel_addr + vel_ndim;
       joint_vel_indexes[joint_name] = joint_qvel_addr_vec;
     }
-
-    joint_indexes[joint_name] = joint_id;
   }
   
   robot_node_handle.setParam("mujoco_ros/joint_pos_indexes", joint_pos_indexes);
   robot_node_handle.setParam("mujoco_ros/joint_vel_indexes", joint_vel_indexes);
-  robot_node_handle.setParam("mujoco_ros/joint_indexes", joint_indexes);
 
-  // actuator_indexes
-  std::map<std::string, int> actuator_indexes;
-  std::string actuator_name;
+  // self.body_names, self._body_name2id, self._body_id2name = self._extract_mj_names(p, p.name_bodyadr, p.nbody, mjtObj.mjOBJ_BODY)
+  // self.joint_names, self._joint_name2id, self._joint_id2name = self._extract_mj_names(p, p.name_jntadr, p.njnt, mjtObj.mjOBJ_JOINT)
+  // self.geom_names, self._geom_name2id, self._geom_id2name = self._extract_mj_names(p, p.name_geomadr, p.ngeom, mjtObj.mjOBJ_GEOM)
+  // self.site_names, self._site_name2id, self._site_id2name = self._extract_mj_names(p, p.name_siteadr, p.nsite, mjtObj.mjOBJ_SITE)
+  // self.light_names, self._light_name2id, self._light_id2name = self._extract_mj_names(p, p.name_lightadr, p.nlight, mjtObj.mjOBJ_LIGHT)
+  // self.camera_names, self._camera_name2id, self._camera_id2name = self._extract_mj_names(p, p.name_camadr, p.ncam, mjtObj.mjOBJ_CAMERA)
+  // self.actuator_names, self._actuator_name2id, self._actuator_id2name = self._extract_mj_names(p, p.name_actuatoradr, p.nu, mjtObj.mjOBJ_ACTUATOR)
+  // self.sensor_names, self._sensor_name2id, self._sensor_id2name = self._extract_mj_names(p, p.name_sensoradr, p.nsensor, mjtObj.mjOBJ_SENSOR)
+  // self.tendon_names, self._tendon_name2id, self._tendon_id2name = self._extract_mj_names(p, p.name_tendonadr, p.ntendon, mjtObj.mjOBJ_TENDON)
+  // self.mesh_names, self._mesh_name2id, self._mesh_id2name = self._extract_mj_names(p, p.name_meshadr, p.nmesh, mjtObj.mjOBJ_MESH)
 
-  for (int actuator_id = 0; actuator_id < mujoco_model->nu; actuator_id++)
-  {
-    actuator_name = mj_id2name(mujoco_model, mjOBJ_ACTUATOR, actuator_id);
-    actuator_indexes[actuator_name] = actuator_id;
-  }
+  // body_name2id, body_id2name
+  std::vector<XmlRpc::XmlRpcValue> body_params;
+  body_params = extract_name_index_parameters(mujoco_model->name_bodyadr, mujoco_model->nbody, mjOBJ_BODY);
 
-  robot_node_handle.setParam("mujoco_ros/actuator_indexes", actuator_indexes);
+  robot_node_handle.setParam("mujoco_ros/body_name2id", body_params[0]);
+  robot_node_handle.setParam("mujoco_ros/body_id2name", body_params[1]);
 
-  // cdef inline tuple _extract_mj_names(self, mjModel* p, int*name_adr, int n, mjtObj obj_type):
-  //   cdef char *name
-  //   cdef int obj_id
+  // joint_name2id, joint_id2name
+  std::vector<XmlRpc::XmlRpcValue> joint_params;
+  joint_params = extract_name_index_parameters(mujoco_model->name_jntadr, mujoco_model->njnt, mjOBJ_JOINT);
 
-  //   # objects don't need to be named in the XML, so name might be None
-  //   id2name = {i: None for i in range(n)}
-  //   name2id = {}
-  //   for i in range(n):
-  //       name = p.names + name_adr[i]
-  //       decoded_name = name.decode()
-  //       if decoded_name:
-  //           obj_id = mj_name2id(p, obj_type, name)
-  //           assert 0 <= obj_id < n and id2name[obj_id] is None
-  //           name2id[decoded_name] = obj_id
-  //           id2name[obj_id] = decoded_name
+  robot_node_handle.setParam("mujoco_ros/joint_name2id", joint_params[0]);
+  robot_node_handle.setParam("mujoco_ros/joint_id2name", joint_params[1]);
 
-  //   # sort names by increasing id to keep order deterministic
-  //   return tuple(id2name[id] for id in sorted(name2id.values())), name2id, id2name
+  // geom_name2id, geom_id2name
+  std::vector<XmlRpc::XmlRpcValue> geom_params;
+  geom_params = extract_name_index_parameters(mujoco_model->name_geomadr, mujoco_model->ngeom, mjOBJ_GEOM);
 
-  // site_indexes
-  std::map<std::string, int> site_indexes;
-  std::string site_name;
+  robot_node_handle.setParam("mujoco_ros/geom_name2id", geom_params[0]);
+  robot_node_handle.setParam("mujoco_ros/geom_id2name", geom_params[1]);
 
-  for (int site_id = 0; site_id < mujoco_model->nsite; site_id++)
-  {
-    site_name = mj_id2name(mujoco_model, mjOBJ_SITE, site_id);
-    site_indexes[site_name] = site_id;
-  }
+  // site_name2id, site_id2name
+  std::vector<XmlRpc::XmlRpcValue> site_params;
+  site_params = extract_name_index_parameters(mujoco_model->name_siteadr, mujoco_model->nsite, mjOBJ_SITE);
 
-  robot_node_handle.setParam("mujoco_ros/site_indexes", site_indexes);
+  robot_node_handle.setParam("mujoco_ros/site_name2id", site_params[0]);
+  robot_node_handle.setParam("mujoco_ros/site_id2name", site_params[1]);
 
-  // body_indexes
-  std::map<std::string, int> body_indexes;
-  std::string body_name;
+  // camera_name2id, camera_id2name
+  std::vector<XmlRpc::XmlRpcValue> camera_params;
+  camera_params = extract_name_index_parameters(mujoco_model->name_camadr, mujoco_model->ncam, mjOBJ_CAMERA);
 
-  for (int body_id = 0; body_id < mujoco_model->nbody; body_id++)
-  {
-    body_name = mj_id2name(mujoco_model, mjOBJ_BODY, body_id);
-    body_indexes[body_name] = body_id;
-  }
+  robot_node_handle.setParam("mujoco_ros/camera_name2id", camera_params[0]);
+  robot_node_handle.setParam("mujoco_ros/camera_id2name", camera_params[1]);
 
-  robot_node_handle.setParam("mujoco_ros/body_indexes", body_indexes);
+  // actuator_name2id, actuator_id2name
+  std::vector<XmlRpc::XmlRpcValue> actuator_params;
+  actuator_params = extract_name_index_parameters(mujoco_model->name_actuatoradr, mujoco_model->nu, mjOBJ_ACTUATOR);
 
-  // geom_indexes
-  std::map<std::string, int> geom_indexes;
-  std::string geom_name;
-
-  for (int geom_id = 0; geom_id < mujoco_model->ngeom - 5; geom_id++)
-  {
-    // geom_name = mj_id2name(mujoco_model, mjOBJ_GEOM, geom_id);
-    geom_indexes[geom_name] = geom_id;
-  }
-
-  robot_node_handle.setParam("mujoco_ros/geom_indexes", geom_indexes);
+  robot_node_handle.setParam("mujoco_ros/actuator_name2id", actuator_params[0]);
+  robot_node_handle.setParam("mujoco_ros/actuator_id2name", actuator_params[1]);
 }
 
 void MujocoRosControl::publish_sim_time()
