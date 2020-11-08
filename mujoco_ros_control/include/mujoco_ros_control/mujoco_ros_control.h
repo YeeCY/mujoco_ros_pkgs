@@ -104,6 +104,9 @@ protected:
   // get number of degrees of freedom
   void get_number_of_dofs();
 
+  // set mujoco model parameters
+  void set_model_parameters();
+
   // publish simulation time to ros clock
   void publish_sim_time();
 

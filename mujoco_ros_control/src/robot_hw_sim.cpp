@@ -329,23 +329,30 @@ void RobotHWSim::write(const ros::Time& time, const ros::Duration& period)
     for (auto& joint_item : joints_)
     {
       JointData& joint = joint_item.second;
-      if ( actuator.first == joint.name)
+
+      switch (joint.control_method)
       {
-        switch (joint.control_method)
+        case EFFORT:
         {
-          case EFFORT:
+          if (joint.name.find(actuator.first.substr(0, actuator.first.length() - 4)) != std::string::npos)  // length "_torq" = 4
           {
             mujoco_data_->ctrl[actuator.second.id] = joint.effort_command;
           }
-          break;
+        }
+        break;
 
-          case POSITION:
+        case POSITION:
+        {
+          if (joint.name.find(actuator.first.substr(0, actuator.first.length() - 3)) != std::string::npos)  // length "_pos" = 3
           {
             mujoco_data_->ctrl[actuator.second.id] = joint.position_command;
           }
-          break;
+        }
+        break;
 
-          case POSITION_PID:
+        case POSITION_PID:
+        {
+          if (joint.name.find(actuator.first.substr(0, actuator.first.length() - 3)) != std::string::npos)  // length "_pos" = 3
           {
             double error;
 
@@ -355,23 +362,76 @@ void RobotHWSim::write(const ros::Time& time, const ros::Duration& period)
                                         -effort_limit, effort_limit);
             mujoco_data_->ctrl[actuator.second.id] = effort;
           }
-          break;
+        }
+        break;
 
-          case VELOCITY:
+        case VELOCITY:
+        {
+          if (joint.name.find(actuator.first.substr(0, actuator.first.length() - 3)) != std::string::npos)  // length "_vel" = 3
+          {
             mujoco_data_->ctrl[actuator.second.id] = joint.velocity_command;
-            break;
+          }
+        }
+        break;
 
-          case VELOCITY_PID:
+        case VELOCITY_PID:
+        {
+          if (joint.name.find(actuator.first.substr(0, actuator.first.length() - 3)) != std::string::npos)  // length "_vel" = 3
+          {
             double error;
             error = joint.velocity_command - joint.velocity;
             const double effort_limit = joint.effort_limit;
             const double effort = clamp(joint.pid_controller.computeCommand(error, period),
                                         -effort_limit, effort_limit);
             mujoco_data_->ctrl[actuator.second.id] = effort;
-            break;
+          }
         }
-        continue;
+        break;
       }
+
+      // if ( actuator.first == joint.name)
+      // {
+      //   switch (joint.control_method)
+      //   {
+      //     case EFFORT:
+      //     {
+      //       mujoco_data_->ctrl[actuator.second.id] = joint.effort_command;
+      //     }
+      //     break;
+
+      //     case POSITION:
+      //     {
+      //       mujoco_data_->ctrl[actuator.second.id] = joint.position_command;
+      //     }
+      //     break;
+
+      //     case POSITION_PID:
+      //     {
+      //       double error;
+
+      //       error = joint.position_command - joint.position;
+      //       const double effort_limit = joint.effort_limit;
+      //       const double effort = clamp(joint.pid_controller.computeCommand(error, period),
+      //                                   -effort_limit, effort_limit);
+      //       mujoco_data_->ctrl[actuator.second.id] = effort;
+      //     }
+      //     break;
+
+      //     case VELOCITY:
+      //       mujoco_data_->ctrl[actuator.second.id] = joint.velocity_command;
+      //       break;
+
+      //     case VELOCITY_PID:
+      //       double error;
+      //       error = joint.velocity_command - joint.velocity;
+      //       const double effort_limit = joint.effort_limit;
+      //       const double effort = clamp(joint.pid_controller.computeCommand(error, period),
+      //                                   -effort_limit, effort_limit);
+      //       mujoco_data_->ctrl[actuator.second.id] = effort;
+      //       break;
+      //   }
+      //   continue;
+      // }
     }
   }
 }

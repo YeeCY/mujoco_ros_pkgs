@@ -143,6 +143,9 @@ bool MujocoRosControl::init(ros::NodeHandle &nodehandle)
     // set control period as mujoco_period
     control_period_ = mujoco_period;
 
+    // set mujoco model parameters
+    set_model_parameters();
+
     // load the RobotHWSim abstraction to interface the controllers with the gazebo model
     try
     {
@@ -424,6 +427,140 @@ std::string MujocoRosControl::geom_type_to_string(int geom_type)
 void MujocoRosControl::get_number_of_dofs()
 {
   n_dof_ = mujoco_model->njnt;
+}
+
+void MujocoRosControl::set_model_parameters()
+{
+  // timestep
+  robot_node_handle.setParam("mujoco_ros/timestep", mujoco_model->opt.timestep);
+
+  // joint_pos_indexes, joint_vel_indexes, joint_indexes
+  XmlRpc::XmlRpcValue joint_pos_indexes, joint_vel_indexes, joint_indexes;
+  std::string joint_name;
+  int joint_type, pos_ndim, vel_ndim, joint_qpos_addr, joint_qvel_addr;
+
+  for (int joint_id = 0; joint_id < n_dof_ - n_free_joints_; joint_id++)
+  {
+    joint_name = mj_id2name(mujoco_model, mjOBJ_JOINT, joint_id);
+    joint_type = mujoco_model->jnt_type[joint_id];
+    joint_qpos_addr = mujoco_model->jnt_qposadr[joint_id];
+    joint_qvel_addr = mujoco_model->jnt_dofadr[joint_id];
+    switch (joint_type)
+    {
+      case mjJNT_FREE:
+        pos_ndim = 7;
+        vel_ndim = 6;
+        break;
+      case mjJNT_BALL:
+        pos_ndim = 4;
+        vel_ndim = 3;
+        break;
+      default:  // mjJNT_HINGE, mjJNT_SLIDE
+        pos_ndim = 1;
+        vel_ndim = 1;
+        break;
+    }
+
+    if (pos_ndim == 1)
+    {
+      joint_pos_indexes[joint_name] = joint_qpos_addr;
+    }
+    else
+    {
+      // joint_pos_index_ranges[joint_name] = {joint_qpos_addr, joint_qpos_addr + pos_ndim};
+      XmlRpc::XmlRpcValue joint_qpos_addr_vec;
+      joint_qpos_addr_vec[0] = joint_qpos_addr;
+      joint_qpos_addr_vec[1] = joint_qpos_addr + pos_ndim;
+      joint_pos_indexes[joint_name] = joint_qpos_addr_vec;
+    }
+    
+
+    if (vel_ndim == 1)
+    {
+      joint_vel_indexes[joint_name] = joint_qvel_addr;
+    }
+    else
+    {
+      // joint_vel_index_ranges[joint_name] = {joint_qvel_addr, joint_qvel_addr + vel_ndim};
+      XmlRpc::XmlRpcValue joint_qvel_addr_vec;
+      joint_qvel_addr_vec[0] = joint_qvel_addr;
+      joint_qvel_addr_vec[1] = joint_qvel_addr + vel_ndim;
+      joint_vel_indexes[joint_name] = joint_qvel_addr_vec;
+    }
+
+    joint_indexes[joint_name] = joint_id;
+  }
+  
+  robot_node_handle.setParam("mujoco_ros/joint_pos_indexes", joint_pos_indexes);
+  robot_node_handle.setParam("mujoco_ros/joint_vel_indexes", joint_vel_indexes);
+  robot_node_handle.setParam("mujoco_ros/joint_indexes", joint_indexes);
+
+  // actuator_indexes
+  std::map<std::string, int> actuator_indexes;
+  std::string actuator_name;
+
+  for (int actuator_id = 0; actuator_id < mujoco_model->nu; actuator_id++)
+  {
+    actuator_name = mj_id2name(mujoco_model, mjOBJ_ACTUATOR, actuator_id);
+    actuator_indexes[actuator_name] = actuator_id;
+  }
+
+  robot_node_handle.setParam("mujoco_ros/actuator_indexes", actuator_indexes);
+
+  // cdef inline tuple _extract_mj_names(self, mjModel* p, int*name_adr, int n, mjtObj obj_type):
+  //   cdef char *name
+  //   cdef int obj_id
+
+  //   # objects don't need to be named in the XML, so name might be None
+  //   id2name = {i: None for i in range(n)}
+  //   name2id = {}
+  //   for i in range(n):
+  //       name = p.names + name_adr[i]
+  //       decoded_name = name.decode()
+  //       if decoded_name:
+  //           obj_id = mj_name2id(p, obj_type, name)
+  //           assert 0 <= obj_id < n and id2name[obj_id] is None
+  //           name2id[decoded_name] = obj_id
+  //           id2name[obj_id] = decoded_name
+
+  //   # sort names by increasing id to keep order deterministic
+  //   return tuple(id2name[id] for id in sorted(name2id.values())), name2id, id2name
+
+  // site_indexes
+  std::map<std::string, int> site_indexes;
+  std::string site_name;
+
+  for (int site_id = 0; site_id < mujoco_model->nsite; site_id++)
+  {
+    site_name = mj_id2name(mujoco_model, mjOBJ_SITE, site_id);
+    site_indexes[site_name] = site_id;
+  }
+
+  robot_node_handle.setParam("mujoco_ros/site_indexes", site_indexes);
+
+  // body_indexes
+  std::map<std::string, int> body_indexes;
+  std::string body_name;
+
+  for (int body_id = 0; body_id < mujoco_model->nbody; body_id++)
+  {
+    body_name = mj_id2name(mujoco_model, mjOBJ_BODY, body_id);
+    body_indexes[body_name] = body_id;
+  }
+
+  robot_node_handle.setParam("mujoco_ros/body_indexes", body_indexes);
+
+  // geom_indexes
+  std::map<std::string, int> geom_indexes;
+  std::string geom_name;
+
+  for (int geom_id = 0; geom_id < mujoco_model->ngeom - 5; geom_id++)
+  {
+    // geom_name = mj_id2name(mujoco_model, mjOBJ_GEOM, geom_id);
+    geom_indexes[geom_name] = geom_id;
+  }
+
+  robot_node_handle.setParam("mujoco_ros/geom_indexes", geom_indexes);
 }
 
 void MujocoRosControl::publish_sim_time()
