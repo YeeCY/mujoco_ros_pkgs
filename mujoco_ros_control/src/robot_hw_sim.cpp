@@ -281,7 +281,7 @@ void RobotHWSim::write(const ros::Time& time, const ros::Duration& period)
 
   for (auto& actuator : mujoco_actuators_)
   {
-    // Shadow Hand
+    // Shadow Hand tenden motors
     // if (string_ends_with(actuator.first, "FJ0"))
     // {
     //   std::string joint_1_name = actuator.first;

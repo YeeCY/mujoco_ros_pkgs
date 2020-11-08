@@ -93,31 +93,31 @@ bool MujocoRosControl::init(ros::NodeHandle &nodehandle)
     }
 
     // read xml from ros parameter server
-    const std::string xml_string = get_mujoco_xml("mujoco_model_xml");
+    // const std::string xml_string = get_mujoco_xml("mujoco_model_xml");
 
-    std::string tmp_filename("/tmp/tmp_mujoco_xml.XXXXXX");
-    int tmp_fd = mkstemp((char *)tmp_filename.c_str());
-    if (tmp_fd == -1) {
-      ROS_ERROR_NAMED("mujoco_ros_control", "Error creating temporary xml file\n");
-      return false;
+    // std::string tmp_filename("/tmp/tmp_mujoco_xml.XXXXXX");
+    // int tmp_fd = mkstemp((char *)tmp_filename.c_str());
+    // if (tmp_fd == -1) {
+    //   ROS_ERROR_NAMED("mujoco_ros_control", "Error creating temporary xml file\n");
+    //   return false;
+    // }
+    // write(tmp_fd, xml_string.c_str(), xml_string.length());
+    // close(tmp_fd);
+
+    if (nodehandle.getParam("mujoco_ros_control/robot_model_path", robot_model_path_))
+    {
+      ROS_INFO("Got param: %s", robot_model_path_.c_str());
     }
-    write(tmp_fd, xml_string.c_str(), xml_string.length());
-    close(tmp_fd);
-
-    // if (nodehandle.getParam("mujoco_ros_control/robot_model_path", robot_model_path_))
-    // {
-    //   ROS_INFO("Got param: %s", robot_model_path_.c_str());
-    // }
-    // else
-    // {
-    //   ROS_ERROR("Failed to get param 'robot_model_path'");
-    // }
+    else
+    {
+      ROS_ERROR("Failed to get param 'robot_model_path'");
+    }
 
     char error[1000];
 
     // create mjModel
-    // mujoco_model = mj_loadXML(robot_model_path_.c_str(), NULL, error, 1000);
-    mujoco_model = mj_loadXML(tmp_filename.c_str(), NULL, error, 1000);
+    mujoco_model = mj_loadXML(robot_model_path_.c_str(), NULL, error, 1000);
+    // mujoco_model = mj_loadXML(tmp_filename.c_str(), NULL, error, 1000);
     if (!mujoco_model)
     {
       printf("Could not load mujoco model with error: %s.\n", error);
@@ -251,8 +251,36 @@ void MujocoRosControl::setup_sim_environment()
   // compute forward kinematics for new pos
   mj_forward(mujoco_model, mujoco_data);
 
+  // TODO (chongyi zheng): delete this
+  // for (int i = 0; i < robot_joints.size(); i++)
+  // {
+  //   for (XmlRpc::XmlRpcValue::iterator it = robot_initial_state.begin(); it != robot_initial_state.end(); ++it)
+  //   {
+  //     if (robot_joints[i] == it->first)
+  //     {
+  //       joint_id = mj_name2id(mujoco_model, mjOBJ_JOINT, it->first.c_str());
+  //       joint_qpos_addr = mujoco_model->jnt_qposadr[joint_id];
+  //       ROS_INFO_STREAM(robot_joints[i] << ": " << mujoco_data->qpos[joint_qpos_addr]);
+  //     }
+  //   }
+  // }
+
   // run simulation to setup the new pos
   mj_step(mujoco_model, mujoco_data);
+
+  // TODO (chongyi zheng): delete this
+  // for (int i = 0; i < robot_joints.size(); i++)
+  // {
+  //   for (XmlRpc::XmlRpcValue::iterator it = robot_initial_state.begin(); it != robot_initial_state.end(); ++it)
+  //   {
+  //     if (robot_joints[i] == it->first)
+  //     {
+  //       joint_id = mj_name2id(mujoco_model, mjOBJ_JOINT, it->first.c_str());
+  //       joint_qpos_addr = mujoco_model->jnt_qposadr[joint_id];
+  //       ROS_INFO_STREAM(robot_joints[i] << ": " << mujoco_data->qpos[joint_qpos_addr]);
+  //     }
+  //   }
+  // }
 }
 
 void MujocoRosControl::update()
