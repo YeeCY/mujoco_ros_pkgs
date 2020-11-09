@@ -565,6 +565,17 @@ void MujocoRosControl::set_model_parameters()
 
   robot_node_handle.setParam("mujoco_ros/actuator_name2id", actuator_params[0]);
   robot_node_handle.setParam("mujoco_ros/actuator_id2name", actuator_params[1]);
+
+  // actuator_ctrlrange
+  // XmlRpc::XmlRpcValue actuator_ctrlrange(mujoco_model->actuator_ctrlrange);
+  // self._actuator_ctrlrange = _wrap_mjtNum_2d(p.actuator_ctrlrange, p.nu, 2)
+  // cdef inline np.ndarray _wrap_mjtNum_2d(mjtNum* a, int shape0, int shape1):
+  //   if shape0 * shape1 == 0: return None
+  //   cdef mjtNum[:,:] b = <mjtNum[:shape0,:shape1]> a
+  //   return np.asarray(b)
+  
+  // mujoco_model->actuator_ctrlrange
+
 }
 
 void MujocoRosControl::publish_sim_time()
