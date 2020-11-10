@@ -50,12 +50,15 @@
 #include "geometry_msgs/Pose.h"
 #include "std_msgs/Float64MultiArray.h"
 #include "mujoco_ros_msgs/ModelStates.h"
+#include "mujoco_ros_msgs/JointStates.h"
 
 #include <controller_manager/controller_manager.h>
 #include <transmission_interface/transmission_parser.h>
 
 // srvs
 #include "mujoco_ros_msgs/SetJointQPos.h"
+#include "mujoco_ros_msgs/SetOptGeomGroup.h"
+#include "mujoco_ros_msgs/SetFixedCamera.h"
 
 // openGL stuff
 #include <glfw3.h>
@@ -81,6 +84,9 @@ public:
   // pointer to the mujoco model
   mjModel* mujoco_model;
   mjData* mujoco_data;
+
+  // mujoco visualization
+  mujoco_ros_control::MujocoVisualizationUtils* visualization_utils;
 
   // number of degrees of freedom
   unsigned int n_dof_;
@@ -122,11 +128,23 @@ protected:
   // publish free objects
   void publish_objects_in_scene();
 
+  // publish joint states
+  void publish_joint_states();
+
   // set free objects
   void set_objects_in_scene_callback(const mujoco_ros_msgs::ModelStates& model_states_msg);
 
   // set joint qpos
-  bool set_joint_qpos_callback(mujoco_ros_msgs::SetJointQPos::Request& req, mujoco_ros_msgs::SetJointQPos::Response &res);
+  bool set_joint_qpos_callback(mujoco_ros_msgs::SetJointQPos::Request& req, 
+    mujoco_ros_msgs::SetJointQPos::Response& res);
+
+  // set vopt geomgroup
+  bool set_vopt_geomgroup(mujoco_ros_msgs::SetOptGeomGroup::Request& req, 
+    mujoco_ros_msgs::SetOptGeomGroup::Response& res);
+
+  // set fixed camera
+  bool set_fixed_camera(mujoco_ros_msgs::SetFixedCamera::Request& req, 
+    mujoco_ros_msgs::SetFixedCamera::Response& res);
 
   // transform type id to type name
   std::string geom_type_to_string(int geom_id);
@@ -171,13 +189,20 @@ protected:
 
   // publishing
   ros::Publisher objects_in_scene_publisher = robot_node_handle.advertise<mujoco_ros_msgs::ModelStates>
-                                                                         ("/mujoco_ros/model_states", 1000);
+                                                                         ("mujoco_ros/model_states", 1000);
+  ros::Publisher joint_state_publisher = robot_node_handle.advertise<mujoco_ros_msgs::JointStates>
+                                                                         ("mujoco_ros/joint_states", 1000);
 
   // subscribing
   // ros::Subscriber set_objects_in_scene_subscriber = robot_node_handle.subscribe("/mujoco_ros/set_model_state", 1000, MujocoRosControl::set_objects_in_scene_callback);
 
   // server
-  ros::ServiceServer set_joint_qpos_server = robot_node_handle.advertiseService("/mujoco_ros/set_joint_qpos", &MujocoRosControl::set_joint_qpos_callback, this);
+  ros::ServiceServer set_joint_qpos_server = robot_node_handle.advertiseService(
+    "mujoco_ros/set_joint_qpos", &MujocoRosControl::set_joint_qpos_callback, this);
+  ros::ServiceServer set_opt_geomgroup_server = robot_node_handle.advertiseService(
+    "mujoco_ros/set_vopt_geomgroup", &MujocoRosControl::set_vopt_geomgroup, this);
+  ros::ServiceServer set_fixed_camera_server = robot_node_handle.advertiseService(
+    "mujoco_ros/set_fixed_camera", &MujocoRosControl::set_fixed_camera, this);
 };
 }  // namespace mujoco_ros_control
 #endif  // MUJOCO_ROS_CONTROL_MUJOCO_ROS_CONTROL_H

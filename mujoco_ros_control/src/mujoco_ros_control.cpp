@@ -319,6 +319,7 @@ void MujocoRosControl::update()
   mj_step2(mujoco_model, mujoco_data);
 
   publish_objects_in_scene();
+  publish_joint_states();
 }
 
 // get the MuJoCo XML from the parameter server
@@ -455,12 +456,15 @@ void MujocoRosControl::set_model_parameters()
   // timestep
   robot_node_handle.setParam("mujoco_ros/timestep", mujoco_model->opt.timestep);
 
+  // ncam
+  robot_node_handle.setParam("mujoco_ros/ncam", mujoco_model->ncam);
+
   // joint_pos_indexes, joint_vel_indexes
   XmlRpc::XmlRpcValue joint_pos_indexes, joint_vel_indexes;
   std::string joint_name;
   int joint_type, pos_ndim, vel_ndim, joint_qpos_addr, joint_qvel_addr;
 
-  for (int joint_id = 0; joint_id < n_dof_ - n_free_joints_; joint_id++)
+  for (int joint_id = 0; joint_id < n_dof_; joint_id++)
   {
     joint_name = mj_id2name(mujoco_model, mjOBJ_JOINT, joint_id);
     joint_type = mujoco_model->jnt_type[joint_id];
@@ -665,6 +669,70 @@ void MujocoRosControl::publish_objects_in_scene()
   objects_in_scene_publisher.publish(objects);
 }
 
+void MujocoRosControl::publish_joint_states()
+{
+  mujoco_ros_msgs::JointStates joint_states;
+
+  std::vector<std::string> name;
+  std_msgs::Float64MultiArray position, velocity;
+  std::string joint_name;
+  int joint_type, pos_ndim, vel_ndim, joint_qpos_addr, joint_qvel_addr;
+
+  for (int joint_id = 0; joint_id < n_dof_; joint_id++)
+  {
+    joint_name = mj_id2name(mujoco_model, mjOBJ_JOINT, joint_id);
+    joint_type = mujoco_model->jnt_type[joint_id];
+    joint_qpos_addr = mujoco_model->jnt_qposadr[joint_id];
+    joint_qvel_addr = mujoco_model->jnt_dofadr[joint_id];
+    switch (joint_type)
+    {
+      case mjJNT_FREE:
+        pos_ndim = 7;
+        vel_ndim = 6;
+        break;
+      case mjJNT_BALL:
+        pos_ndim = 4;
+        vel_ndim = 3;
+        break;
+      default:  // mjJNT_HINGE, mjJNT_SLIDE
+        pos_ndim = 1;
+        vel_ndim = 1;
+        break;
+    }
+
+    joint_states.name.push_back(joint_name);
+    position.data.clear();
+    velocity.data.clear();
+    if (pos_ndim == 1)
+    {
+      position.data.push_back(mujoco_data->qpos[joint_qpos_addr]);
+    }
+    else
+    {
+      for (int idx = 0; idx < pos_ndim; idx++)
+      {
+        position.data.push_back(mujoco_data->qpos[joint_qpos_addr + idx]);
+      }
+    }
+
+    if (vel_ndim == 1)
+    {
+      velocity.data.push_back(mujoco_data->qvel[joint_qvel_addr]);
+    }
+    else
+    {
+      for (int idx = 0; idx < vel_ndim; idx++)
+      {
+        velocity.data.push_back(mujoco_data->qvel[joint_qvel_addr + idx]);
+      }
+    }
+    joint_states.position.push_back(position);
+    joint_states.velocity.push_back(velocity);
+  }
+  
+  joint_state_publisher.publish(joint_states);
+}
+
 void MujocoRosControl::set_objects_in_scene_callback(const mujoco_ros_msgs::ModelStates& model_states_msg)
 {
   int object_id;
@@ -696,10 +764,10 @@ void MujocoRosControl::set_objects_in_scene_callback(const mujoco_ros_msgs::Mode
   }
 }
 
-bool MujocoRosControl::set_joint_qpos_callback(mujoco_ros_msgs::SetJointQPos::Request& req, mujoco_ros_msgs::SetJointQPos::Response &res)
+bool MujocoRosControl::set_joint_qpos_callback(mujoco_ros_msgs::SetJointQPos::Request& req, mujoco_ros_msgs::SetJointQPos::Response& res)
 {
   std::string name = req.name;
-  std::vector<double> value = req.value;
+  std::vector<double_t> value = req.value;
 
   int joint_id, joint_type, joint_qpos_addr, pos_ndim;
   
@@ -727,6 +795,26 @@ bool MujocoRosControl::set_joint_qpos_callback(mujoco_ros_msgs::SetJointQPos::Re
   return true;
 }
 
+bool MujocoRosControl::set_vopt_geomgroup(mujoco_ros_msgs::SetOptGeomGroup::Request& req, mujoco_ros_msgs::SetOptGeomGroup::Response& res)
+{
+  int32_t index = req.index;
+  uint8_t value = req.value;
+
+  visualization_utils->get_opt()->geomgroup[index] = value;
+
+  return true;
+}
+
+bool MujocoRosControl::set_fixed_camera(mujoco_ros_msgs::SetFixedCamera::Request& req, mujoco_ros_msgs::SetFixedCamera::Response& res)
+{
+  int32_t camera_id = req.camera_id;
+  
+  visualization_utils->get_cam()->fixedcamid = camera_id;
+  visualization_utils->get_cam()->type = mjCAMERA_FIXED;
+
+  return true;
+}
+
 }  // namespace mujoco_ros_control
 
 int main(int argc, char** argv)
@@ -737,8 +825,8 @@ int main(int argc, char** argv)
 
     mujoco_ros_control::MujocoRosControl mujoco_ros_control;
 
-    mujoco_ros_control::MujocoVisualizationUtils &mujoco_visualization_utils =
-        mujoco_ros_control::MujocoVisualizationUtils::getInstance();
+    mujoco_ros_control.visualization_utils =
+        &mujoco_ros_control::MujocoVisualizationUtils::getInstance();
 
     // initialize mujoco stuff
     if (!mujoco_ros_control.init(nh_))
@@ -752,7 +840,7 @@ int main(int argc, char** argv)
       mju_error("Could not initialize GLFW");
 
     // create window, make OpenGL context current, request v-sync
-    GLFWwindow* window = glfwCreateWindow(1200, 900, "Demo", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(1200, 900, "MujocoROS", NULL, NULL);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
@@ -760,7 +848,7 @@ int main(int argc, char** argv)
     glfwMakeContextCurrent(window);
 
     // initialize mujoco visualization functions
-    mujoco_visualization_utils.init(mujoco_ros_control.mujoco_model, mujoco_ros_control.mujoco_data, window);
+    mujoco_ros_control.visualization_utils->init(mujoco_ros_control.mujoco_model, mujoco_ros_control.mujoco_data, window);
 
     // spin
     ros::AsyncSpinner spinner(1);
@@ -778,10 +866,10 @@ int main(int argc, char** argv)
       {
         mujoco_ros_control.update();
       }
-      mujoco_visualization_utils.update(window);
+      mujoco_ros_control.visualization_utils->update(window);
     }
 
-    mujoco_visualization_utils.terminate();
+    mujoco_ros_control.visualization_utils->terminate();
 
     return 0;
 }

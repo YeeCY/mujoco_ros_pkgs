@@ -28,6 +28,16 @@
 namespace mujoco_ros_control
 {
 
+mjvOption* MujocoVisualizationUtils::get_opt()
+{
+    return &opt;
+}
+
+mjvCamera* MujocoVisualizationUtils::get_cam()
+{
+    return &cam;
+}
+
 void MujocoVisualizationUtils::init(mjModel* mujoco_model, mjData* mujoco_data, GLFWwindow* window)
 {
   ROS_INFO("Initializing GL functions");

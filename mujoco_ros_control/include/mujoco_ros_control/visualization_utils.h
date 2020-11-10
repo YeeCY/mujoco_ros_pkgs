@@ -39,6 +39,10 @@ public:
     return instance;
   }
 
+  mjvOption* get_opt();
+
+  mjvCamera* get_cam();
+
   void init(mjModel* mujoco_model, mjData* mujoco_data, GLFWwindow* window);
 
   void update(GLFWwindow* window);

@@ -12,12 +12,15 @@ find_package(catkin REQUIRED COMPONENTS roslib genmsg message_generation ${MSG_D
 add_message_files(
   FILES
   ModelStates.msg
+  JointStates.msg
 )
 
 add_service_files(
   FILES
   SpawnObjects.srv
   SetJointQPos.srv
+  SetOptGeomGroup.srv
+  SetFixedCamera.srv
 )
 
 generate_messages(DEPENDENCIES ${MSG_DEPS})
