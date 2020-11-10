@@ -696,6 +696,37 @@ void MujocoRosControl::set_objects_in_scene_callback(const mujoco_ros_msgs::Mode
   }
 }
 
+bool MujocoRosControl::set_joint_qpos_callback(mujoco_ros_msgs::SetJointQPos::Request& req, mujoco_ros_msgs::SetJointQPos::Response &res)
+{
+  std::string name = req.name;
+  std::vector<double> value = req.value;
+
+  int joint_id, joint_type, joint_qpos_addr, pos_ndim;
+  
+  joint_id = mj_name2id(mujoco_model, mjOBJ_JOINT, name.c_str());
+  joint_type = mujoco_model->jnt_type[joint_id];
+  joint_qpos_addr = mujoco_model->jnt_qposadr[joint_id];
+  switch (joint_type)
+  {
+    case mjJNT_FREE:
+      pos_ndim = 7;
+      break;
+    case mjJNT_BALL:
+      pos_ndim = 4;
+      break;
+    default:  // mjJNT_HINGE, mjJNT_SLIDE
+      pos_ndim = 1;
+      break;
+  }
+
+  for (int i = 0; i < pos_ndim; i++)
+  {
+    mujoco_data->qpos[joint_qpos_addr + i] = value[i];
+  }
+
+  return true;
+}
+
 }  // namespace mujoco_ros_control
 
 int main(int argc, char** argv)

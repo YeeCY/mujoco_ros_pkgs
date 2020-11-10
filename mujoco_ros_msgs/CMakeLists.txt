@@ -17,6 +17,7 @@ add_message_files(
 add_service_files(
   FILES
   SpawnObjects.srv
+  SetJointQPos.srv
 )
 
 generate_messages(DEPENDENCIES ${MSG_DEPS})

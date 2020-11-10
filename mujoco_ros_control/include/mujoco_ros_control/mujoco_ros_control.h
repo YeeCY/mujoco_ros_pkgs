@@ -54,6 +54,9 @@
 #include <controller_manager/controller_manager.h>
 #include <transmission_interface/transmission_parser.h>
 
+// srvs
+#include "mujoco_ros_msgs/SetJointQPos.h"
+
 // openGL stuff
 #include <glfw3.h>
 #include <mujoco_ros_control/visualization_utils.h>
@@ -122,6 +125,9 @@ protected:
   // set free objects
   void set_objects_in_scene_callback(const mujoco_ros_msgs::ModelStates& model_states_msg);
 
+  // set joint qpos
+  bool set_joint_qpos_callback(mujoco_ros_msgs::SetJointQPos::Request& req, mujoco_ros_msgs::SetJointQPos::Response &res);
+
   // transform type id to type name
   std::string geom_type_to_string(int geom_id);
 
@@ -165,11 +171,13 @@ protected:
 
   // publishing
   ros::Publisher objects_in_scene_publisher = robot_node_handle.advertise<mujoco_ros_msgs::ModelStates>
-                                                                         ("/mujoco/model_states", 1000);
+                                                                         ("/mujoco_ros/model_states", 1000);
 
-  // // subscribing
-  // ros::Subscriber set_objects_in_scene_subscriber = robot_node_handle.subscribe("/mujoco/set_model_state", 1000, MujocoRosControl::set_objects_in_scene_callback);
+  // subscribing
+  // ros::Subscriber set_objects_in_scene_subscriber = robot_node_handle.subscribe("/mujoco_ros/set_model_state", 1000, MujocoRosControl::set_objects_in_scene_callback);
 
+  // server
+  ros::ServiceServer set_joint_qpos_server = robot_node_handle.advertiseService("/mujoco_ros/set_joint_qpos", &MujocoRosControl::set_joint_qpos_callback, this);
 };
 }  // namespace mujoco_ros_control
 #endif  // MUJOCO_ROS_CONTROL_MUJOCO_ROS_CONTROL_H
