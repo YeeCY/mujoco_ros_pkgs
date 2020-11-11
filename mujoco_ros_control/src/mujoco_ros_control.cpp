@@ -320,6 +320,8 @@ void MujocoRosControl::update()
 
   publish_objects_in_scene();
   publish_joint_states();
+  publish_site_states();
+  publish_body_states();
 }
 
 // get the MuJoCo XML from the parameter server
@@ -672,10 +674,8 @@ void MujocoRosControl::publish_objects_in_scene()
 void MujocoRosControl::publish_joint_states()
 {
   mujoco_ros_msgs::JointStates joint_states;
-
-  std::vector<std::string> name;
-  std_msgs::Float64MultiArray position, velocity;
   std::string joint_name;
+  std_msgs::Float64MultiArray position, velocity;
   int joint_type, pos_ndim, vel_ndim, joint_qpos_addr, joint_qvel_addr;
 
   for (int joint_id = 0; joint_id < n_dof_; joint_id++)
@@ -731,6 +731,59 @@ void MujocoRosControl::publish_joint_states()
   }
   
   joint_state_publisher.publish(joint_states);
+}
+
+void MujocoRosControl::publish_site_states()
+{
+  mujoco_ros_msgs::SiteStates site_states;
+  std::string site_name;
+  std_msgs::Float64MultiArray position, rotation_matrix;
+
+  for (int site_id = 0; site_id < mujoco_model->nsite; site_id++)
+  {
+    site_name = mj_id2name(mujoco_model, mjOBJ_SITE, site_id);
+
+    site_states.name.push_back(site_name);
+    position.data.clear();
+    rotation_matrix.data.clear();
+    for (int idx = 0; idx < 3; idx++)
+    {
+      position.data.push_back(mujoco_data->site_xpos[site_id + idx]);
+    }
+
+    for (int idx = 0; idx < 9; idx++)
+    {
+      rotation_matrix.data.push_back(mujoco_data->site_xmat[site_id + idx]);// column first layout
+    }
+    site_states.position.push_back(position);
+    site_states.rotation_matrix.push_back(rotation_matrix);
+  }
+  
+  site_state_publisher.publish(site_states);
+}
+
+void MujocoRosControl::publish_body_states()
+{
+  mujoco_ros_msgs::BodyStates body_states;
+  std::string body_name;
+  geometry_msgs::Pose pose;
+
+  for (int body_id = 0; body_id < mujoco_model->nbody; body_id++)
+  {
+    body_name = mj_id2name(mujoco_model, mjOBJ_BODY, body_id);
+    body_states.name.push_back(body_name);
+    
+    pose.position.x = mujoco_data->xpos[body_id];
+    pose.position.y = mujoco_data->xpos[body_id + 1];
+    pose.position.z = mujoco_data->xpos[body_id + 2];
+    pose.orientation.w = mujoco_data->xquat[body_id];// mujoco xquat format = wxyz
+    pose.orientation.x = mujoco_data->xquat[body_id + 1];
+    pose.orientation.y = mujoco_data->xquat[body_id + 2];
+    pose.orientation.z = mujoco_data->xquat[body_id + 3];
+    body_states.pose.push_back(pose);
+  }
+
+  body_state_publisher.publish(body_states);
 }
 
 void MujocoRosControl::set_objects_in_scene_callback(const mujoco_ros_msgs::ModelStates& model_states_msg)

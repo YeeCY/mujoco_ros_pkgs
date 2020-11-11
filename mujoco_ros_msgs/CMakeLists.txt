@@ -13,6 +13,8 @@ add_message_files(
   FILES
   ModelStates.msg
   JointStates.msg
+  SiteStates.msg
+  BodyStates.msg
 )
 
 add_service_files(

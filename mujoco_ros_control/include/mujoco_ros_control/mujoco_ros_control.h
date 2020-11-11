@@ -51,6 +51,8 @@
 #include "std_msgs/Float64MultiArray.h"
 #include "mujoco_ros_msgs/ModelStates.h"
 #include "mujoco_ros_msgs/JointStates.h"
+#include "mujoco_ros_msgs/SiteStates.h"
+#include "mujoco_ros_msgs/BodyStates.h"
 
 #include <controller_manager/controller_manager.h>
 #include <transmission_interface/transmission_parser.h>
@@ -131,6 +133,12 @@ protected:
   // publish joint states
   void publish_joint_states();
 
+  // publish site states
+  void publish_site_states();
+
+  // publish body states
+  void publish_body_states();
+
   // set free objects
   void set_objects_in_scene_callback(const mujoco_ros_msgs::ModelStates& model_states_msg);
 
@@ -192,6 +200,10 @@ protected:
                                                                          ("mujoco_ros/model_states", 1000);
   ros::Publisher joint_state_publisher = robot_node_handle.advertise<mujoco_ros_msgs::JointStates>
                                                                          ("mujoco_ros/joint_states", 1000);
+  ros::Publisher site_state_publisher = robot_node_handle.advertise<mujoco_ros_msgs::SiteStates>
+                                                                         ("mujoco_ros/site_states", 1000);
+  ros::Publisher body_state_publisher = robot_node_handle.advertise<mujoco_ros_msgs::BodyStates>
+                                                                         ("mujoco_ros/body_states", 1000);
 
   // subscribing
   // ros::Subscriber set_objects_in_scene_subscriber = robot_node_handle.subscribe("/mujoco_ros/set_model_state", 1000, MujocoRosControl::set_objects_in_scene_callback);
