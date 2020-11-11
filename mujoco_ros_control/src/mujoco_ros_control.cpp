@@ -746,14 +746,15 @@ void MujocoRosControl::publish_site_states()
     site_states.name.push_back(site_name);
     position.data.clear();
     rotation_matrix.data.clear();
+    // reference: http://www.mujoco.org/forum/index.php?threads/cartesian-coordinates-of-body.3376/
     for (int idx = 0; idx < 3; idx++)
     {
-      position.data.push_back(mujoco_data->site_xpos[site_id + idx]);
+      position.data.push_back(mujoco_data->site_xpos[3 * site_id + idx]);
     }
 
     for (int idx = 0; idx < 9; idx++)
     {
-      rotation_matrix.data.push_back(mujoco_data->site_xmat[site_id + idx]);// column first layout
+      rotation_matrix.data.push_back(mujoco_data->site_xmat[9 * site_id + idx]);// row first layout
     }
     site_states.position.push_back(position);
     site_states.rotation_matrix.push_back(rotation_matrix);
@@ -773,13 +774,14 @@ void MujocoRosControl::publish_body_states()
     body_name = mj_id2name(mujoco_model, mjOBJ_BODY, body_id);
     body_states.name.push_back(body_name);
     
-    pose.position.x = mujoco_data->xpos[body_id];
-    pose.position.y = mujoco_data->xpos[body_id + 1];
-    pose.position.z = mujoco_data->xpos[body_id + 2];
-    pose.orientation.w = mujoco_data->xquat[body_id];// mujoco xquat format = wxyz
-    pose.orientation.x = mujoco_data->xquat[body_id + 1];
-    pose.orientation.y = mujoco_data->xquat[body_id + 2];
-    pose.orientation.z = mujoco_data->xquat[body_id + 3];
+    // reference: http://www.mujoco.org/forum/index.php?threads/cartesian-coordinates-of-body.3376/
+    pose.position.x = mujoco_data->xpos[3 * body_id];
+    pose.position.y = mujoco_data->xpos[3 * body_id + 1];
+    pose.position.z = mujoco_data->xpos[3 * body_id + 2];
+    pose.orientation.w = mujoco_data->xquat[4 * body_id];// mujoco xquat format = wxyz
+    pose.orientation.x = mujoco_data->xquat[4 * body_id + 1];
+    pose.orientation.y = mujoco_data->xquat[4 * body_id + 2];
+    pose.orientation.z = mujoco_data->xquat[4 * body_id + 3];
     body_states.pose.push_back(pose);
   }
 
