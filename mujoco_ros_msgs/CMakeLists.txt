@@ -23,6 +23,7 @@ add_service_files(
   SetJointQPos.srv
   SetOptGeomGroup.srv
   SetFixedCamera.srv
+  Reset.srv
 )
 
 generate_messages(DEPENDENCIES ${MSG_DEPS})

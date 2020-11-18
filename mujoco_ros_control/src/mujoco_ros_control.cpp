@@ -788,36 +788,36 @@ void MujocoRosControl::publish_body_states()
   body_state_publisher.publish(body_states);
 }
 
-void MujocoRosControl::set_objects_in_scene_callback(const mujoco_ros_msgs::ModelStates& model_states_msg)
-{
-  int object_id;
-  int joint_id;
-  int joint_qpos_addr;
+// void MujocoRosControl::set_objects_in_scene_callback(const mujoco_ros_msgs::ModelStates& model_states_msg)
+// {
+//   int object_id;
+//   int joint_id;
+//   int joint_qpos_addr;
 
-  for (int i = 0; i < model_states_msg.name.size(); i++)
-  {
-    object_id = mj_name2id(mujoco_model, mjOBJ_BODY, model_states_msg.name[i].c_str());
-    joint_id = mujoco_model->body_jntadr[object_id];
-    joint_qpos_addr = mujoco_model->jnt_qposadr[joint_id];
-    if (mujoco_model->jnt_type[joint_id] == mjJNT_FREE)
-    {
-      // position
-      mujoco_data->qpos[joint_qpos_addr] = model_states_msg.pose[i].position.x;
-      mujoco_data->qpos[joint_qpos_addr + 1] = model_states_msg.pose[i].position.y;
-      mujoco_data->qpos[joint_qpos_addr + 2] = model_states_msg.pose[i].position.z;
+//   for (int i = 0; i < model_states_msg.name.size(); i++)
+//   {
+//     object_id = mj_name2id(mujoco_model, mjOBJ_BODY, model_states_msg.name[i].c_str());
+//     joint_id = mujoco_model->body_jntadr[object_id];
+//     joint_qpos_addr = mujoco_model->jnt_qposadr[joint_id];
+//     if (mujoco_model->jnt_type[joint_id] == mjJNT_FREE)
+//     {
+//       // position
+//       mujoco_data->qpos[joint_qpos_addr] = model_states_msg.pose[i].position.x;
+//       mujoco_data->qpos[joint_qpos_addr + 1] = model_states_msg.pose[i].position.y;
+//       mujoco_data->qpos[joint_qpos_addr + 2] = model_states_msg.pose[i].position.z;
 
-      // orientation
-      mujoco_data->qpos[joint_qpos_addr + 3] = model_states_msg.pose[i].orientation.w;
-      mujoco_data->qpos[joint_qpos_addr + 4] = model_states_msg.pose[i].orientation.x;
-      mujoco_data->qpos[joint_qpos_addr + 5] = model_states_msg.pose[i].orientation.y;
-      mujoco_data->qpos[joint_qpos_addr + 6] = model_states_msg.pose[i].orientation.z;
-    }
-    else
-    {
-      ROS_WARN("Only objects with free joints can be set!");
-    }
-  }
-}
+//       // orientation
+//       mujoco_data->qpos[joint_qpos_addr + 3] = model_states_msg.pose[i].orientation.w;
+//       mujoco_data->qpos[joint_qpos_addr + 4] = model_states_msg.pose[i].orientation.x;
+//       mujoco_data->qpos[joint_qpos_addr + 5] = model_states_msg.pose[i].orientation.y;
+//       mujoco_data->qpos[joint_qpos_addr + 6] = model_states_msg.pose[i].orientation.z;
+//     }
+//     else
+//     {
+//       ROS_WARN("Only objects with free joints can be set!");
+//     }
+//   }
+// }
 
 bool MujocoRosControl::set_joint_qpos_callback(mujoco_ros_msgs::SetJointQPos::Request& req, mujoco_ros_msgs::SetJointQPos::Response& res)
 {
@@ -869,6 +869,64 @@ bool MujocoRosControl::set_fixed_camera(mujoco_ros_msgs::SetFixedCamera::Request
 
   return true;
 }
+
+// bool MujocoRosControl::reset(mujoco_ros_msgs::Reset::Request& req, mujoco_ros_msgs::Reset::Response& res)
+// {
+//   XmlRpc::XmlRpcValue robot_joints, robot_initial_state;
+//   int joint_id;
+//   int joint_qpos_addr;
+//   bool params_read_correctly = true;
+  
+//   if (!robot_node_handle.getParam("robot_joints", robot_joints))
+//   {
+//     ROS_WARN("Failed to get param 'robot_joints'");
+//     params_read_correctly = false;
+//   }
+
+//   // reset simulation
+//   // mj_resetData(mujoco_model, mujoco_data);
+
+//   if (params_read_correctly && robot_node_handle.getParam("robot_initial_state", robot_initial_state))
+//   {
+//     for (int i = 0; i < robot_joints.size(); i++)
+//     {
+//       for (XmlRpc::XmlRpcValue::iterator it = robot_initial_state.begin(); it != robot_initial_state.end(); ++it)
+//       {
+//         if (robot_joints[i] == it->first)
+//         {
+//           joint_id = mj_name2id(mujoco_model, mjOBJ_JOINT, it->first.c_str());
+//           joint_qpos_addr = mujoco_model->jnt_qposadr[joint_id];
+//           mujoco_data->qpos[joint_qpos_addr] = it->second;
+//         }
+//       }
+//     }
+//   }
+//   else
+//   {
+//     ROS_WARN("Failed to get param 'robot_initial_state'");
+//     params_read_correctly = false;
+//   }
+
+//   if (!params_read_correctly)
+//   {
+//     for (int i = 0; i < n_dof_; i++)
+//     {
+//       if (mujoco_model->jnt_type[i] != mjJNT_FREE && mujoco_model->jnt_type[i] != mjJNT_BALL)
+//       {
+//         joint_qpos_addr = mujoco_model->jnt_qposadr[i];
+//         mujoco_data->qpos[joint_qpos_addr] = 0;
+//       }
+//     }
+//   }
+
+//   // compute forward kinematics for new pos
+//   mj_forward(mujoco_model, mujoco_data);
+
+//   // run simulation to setup the new pos
+//   // mj_step(mujoco_model, mujoco_data);
+
+//   return true;
+// }
 
 }  // namespace mujoco_ros_control
 
