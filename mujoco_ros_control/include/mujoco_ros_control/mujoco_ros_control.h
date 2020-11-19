@@ -155,9 +155,9 @@ protected:
   bool set_fixed_camera(mujoco_ros_msgs::SetFixedCamera::Request& req, 
     mujoco_ros_msgs::SetFixedCamera::Response& res);
 
-  // // reset simulation
-  // bool reset(mujoco_ros_msgs::Reset::Request& req,
-  //   mujoco_ros_msgs::Reset::Response& res);
+  // reset simulation
+  bool reset(mujoco_ros_msgs::Reset::Request& req,
+    mujoco_ros_msgs::Reset::Response& res);
 
   // transform type id to type name
   std::string geom_type_to_string(int geom_id);
@@ -220,8 +220,8 @@ protected:
     "mujoco_ros/set_vopt_geomgroup", &MujocoRosControl::set_vopt_geomgroup, this);
   ros::ServiceServer set_fixed_camera_server = robot_node_handle.advertiseService(
     "mujoco_ros/set_fixed_camera", &MujocoRosControl::set_fixed_camera, this);
-  // ros::ServiceServer reset_server = robot_node_handle.advertiseService(
-  //   "mujoco_ros/reset", &MujocoRosControl::reset, this);
+  ros::ServiceServer reset_server = robot_node_handle.advertiseService(
+    "mujoco_ros/reset", &MujocoRosControl::reset, this);
 };
 }  // namespace mujoco_ros_control
 #endif  // MUJOCO_ROS_CONTROL_MUJOCO_ROS_CONTROL_H
