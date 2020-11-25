@@ -821,36 +821,61 @@ void MujocoRosControl::publish_body_states()
 
 bool MujocoRosControl::set_joint_qpos_callback(mujoco_ros_msgs::SetJointQPos::Request& req, mujoco_ros_msgs::SetJointQPos::Response& res)
 {
-  std::string name = req.name;
-  std::vector<double_t> value = req.value;
+  std::vector<std::string> names = req.name;
+  std::vector<std_msgs::Float64MultiArray> values = req.value;
 
   int joint_id, joint_type, joint_qpos_addr, pos_ndim;
-  
-  joint_id = mj_name2id(mujoco_model, mjOBJ_JOINT, name.c_str());
-  joint_type = mujoco_model->jnt_type[joint_id];
-  joint_qpos_addr = mujoco_model->jnt_qposadr[joint_id];
-  switch (joint_type)
+  std::vector<double> value;
+  for (int i = 0; i < names.size(); i++)
   {
-    case mjJNT_FREE:
-      pos_ndim = 7;
-      break;
-    case mjJNT_BALL:
-      pos_ndim = 4;
-      break;
-    default:  // mjJNT_HINGE, mjJNT_SLIDE
-      pos_ndim = 1;
-      break;
-  }
+    joint_id = mj_name2id(mujoco_model, mjOBJ_JOINT, names[i].c_str());
+    joint_type = mujoco_model->jnt_type[joint_id];
+    joint_qpos_addr = mujoco_model->jnt_qposadr[joint_id];
+    switch (joint_type)
+    {
+      case mjJNT_FREE:
+        pos_ndim = 7;
+        break;
+      case mjJNT_BALL:
+        pos_ndim = 4;
+        break;
+      default:  // mjJNT_HINGE, mjJNT_SLIDE
+        pos_ndim = 1;
+        break;
+    }
 
-  for (int i = 0; i < pos_ndim; i++)
-  {
-    mujoco_data->qpos[joint_qpos_addr + i] = value[i];
+    value = values[i].data;
+
+    for (int j = 0; j < pos_ndim; j++)
+    {
+      mujoco_data->qpos[joint_qpos_addr + j] = value[j];
+    }
   }
 
   return true;
 }
 
-bool MujocoRosControl::set_vopt_geomgroup(mujoco_ros_msgs::SetOptGeomGroup::Request& req, mujoco_ros_msgs::SetOptGeomGroup::Response& res)
+bool MujocoRosControl::set_ctrl_callback(mujoco_ros_msgs::SetCtrl::Request& req, mujoco_ros_msgs::SetCtrl::Response& res)
+{
+  std::vector<std::string> names = req.name;
+  std::vector<double> ctrls = req.ctrl;
+  int actuator_id;
+
+  for (int i = 0; i < names.size(); i++)
+  {
+    ROS_INFO_STREAM("actuator_name: " << names[i]);
+
+    actuator_id = mj_name2id(mujoco_model, mjOBJ_ACTUATOR, names[i].c_str());
+    ROS_INFO_STREAM("actuator_id: " << actuator_id);
+    ROS_INFO_STREAM("init_actuator_value: " << mujoco_data->ctrl[actuator_id]);
+    mujoco_data->ctrl[actuator_id] = ctrls[i];
+    ROS_INFO_STREAM("actuator_value: " << mujoco_data->ctrl[actuator_id]);
+  }
+
+  return true;
+}
+
+bool MujocoRosControl::set_vopt_geomgroup_callback(mujoco_ros_msgs::SetOptGeomGroup::Request& req, mujoco_ros_msgs::SetOptGeomGroup::Response& res)
 {
   int32_t index = req.index;
   uint8_t value = req.value;
@@ -860,7 +885,7 @@ bool MujocoRosControl::set_vopt_geomgroup(mujoco_ros_msgs::SetOptGeomGroup::Requ
   return true;
 }
 
-bool MujocoRosControl::set_fixed_camera(mujoco_ros_msgs::SetFixedCamera::Request& req, mujoco_ros_msgs::SetFixedCamera::Response& res)
+bool MujocoRosControl::set_fixed_camera_callback(mujoco_ros_msgs::SetFixedCamera::Request& req, mujoco_ros_msgs::SetFixedCamera::Response& res)
 {
   int32_t camera_id = req.camera_id;
   
@@ -870,7 +895,7 @@ bool MujocoRosControl::set_fixed_camera(mujoco_ros_msgs::SetFixedCamera::Request
   return true;
 }
 
-bool MujocoRosControl::reset(mujoco_ros_msgs::Reset::Request& req, mujoco_ros_msgs::Reset::Response& res)
+bool MujocoRosControl::reset_callback(mujoco_ros_msgs::Reset::Request& req, mujoco_ros_msgs::Reset::Response& res)
 {
   XmlRpc::XmlRpcValue robot_initial_state;
   int joint_id;

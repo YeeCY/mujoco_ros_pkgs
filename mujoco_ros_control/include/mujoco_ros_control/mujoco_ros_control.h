@@ -62,6 +62,7 @@
 #include "mujoco_ros_msgs/SetOptGeomGroup.h"
 #include "mujoco_ros_msgs/SetFixedCamera.h"
 #include "mujoco_ros_msgs/Reset.h"
+#include "mujoco_ros_msgs/SetCtrl.h"
 
 // openGL stuff
 #include <glfw3.h>
@@ -147,16 +148,20 @@ protected:
   bool set_joint_qpos_callback(mujoco_ros_msgs::SetJointQPos::Request& req, 
     mujoco_ros_msgs::SetJointQPos::Response& res);
 
+  // set ctrl
+  bool set_ctrl_callback(mujoco_ros_msgs::SetCtrl::Request& req,
+    mujoco_ros_msgs::SetCtrl::Response& res);
+
   // set vopt geomgroup
-  bool set_vopt_geomgroup(mujoco_ros_msgs::SetOptGeomGroup::Request& req, 
+  bool set_vopt_geomgroup_callback(mujoco_ros_msgs::SetOptGeomGroup::Request& req, 
     mujoco_ros_msgs::SetOptGeomGroup::Response& res);
 
   // set fixed camera
-  bool set_fixed_camera(mujoco_ros_msgs::SetFixedCamera::Request& req, 
+  bool set_fixed_camera_callback(mujoco_ros_msgs::SetFixedCamera::Request& req, 
     mujoco_ros_msgs::SetFixedCamera::Response& res);
 
   // reset simulation
-  bool reset(mujoco_ros_msgs::Reset::Request& req,
+  bool reset_callback(mujoco_ros_msgs::Reset::Request& req,
     mujoco_ros_msgs::Reset::Response& res);
 
   // transform type id to type name
@@ -217,11 +222,13 @@ protected:
   ros::ServiceServer set_joint_qpos_server = robot_node_handle.advertiseService(
     "mujoco_ros/set_joint_qpos", &MujocoRosControl::set_joint_qpos_callback, this);
   ros::ServiceServer set_opt_geomgroup_server = robot_node_handle.advertiseService(
-    "mujoco_ros/set_vopt_geomgroup", &MujocoRosControl::set_vopt_geomgroup, this);
+    "mujoco_ros/set_vopt_geomgroup", &MujocoRosControl::set_vopt_geomgroup_callback, this);
   ros::ServiceServer set_fixed_camera_server = robot_node_handle.advertiseService(
-    "mujoco_ros/set_fixed_camera", &MujocoRosControl::set_fixed_camera, this);
+    "mujoco_ros/set_fixed_camera", &MujocoRosControl::set_fixed_camera_callback, this);
   ros::ServiceServer reset_server = robot_node_handle.advertiseService(
-    "mujoco_ros/reset", &MujocoRosControl::reset, this);
+    "mujoco_ros/reset", &MujocoRosControl::reset_callback, this);
+  ros::ServiceServer set_ctrl_server = robot_node_handle.advertiseService(
+    "mujoco_ros/set_ctrl", &MujocoRosControl::set_ctrl_callback, this);
 };
 }  // namespace mujoco_ros_control
 #endif  // MUJOCO_ROS_CONTROL_MUJOCO_ROS_CONTROL_H

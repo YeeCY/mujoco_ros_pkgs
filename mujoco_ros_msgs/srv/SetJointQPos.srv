@@ -1,2 +1,2 @@
-string name
-float64[] value
+string[] name
+std_msgs/Float64MultiArray[] value

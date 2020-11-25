@@ -24,6 +24,7 @@ add_service_files(
   SetOptGeomGroup.srv
   SetFixedCamera.srv
   Reset.srv
+  SetCtrl.srv
 )
 
 generate_messages(DEPENDENCIES ${MSG_DEPS})
