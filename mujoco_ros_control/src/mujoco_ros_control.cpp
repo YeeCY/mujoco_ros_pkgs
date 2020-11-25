@@ -895,38 +895,6 @@ bool MujocoRosControl::set_fixed_camera_callback(mujoco_ros_msgs::SetFixedCamera
   return true;
 }
 
-bool MujocoRosControl::reset_callback(mujoco_ros_msgs::Reset::Request& req, mujoco_ros_msgs::Reset::Response& res)
-{
-  XmlRpc::XmlRpcValue robot_initial_state;
-  int joint_id;
-  int joint_qpos_addr;
-
-  // reset simulation
-  // mj_resetData(mujoco_model, mujoco_data);
-
-  if (robot_node_handle.getParam("robot_initial_state", robot_initial_state))
-  {
-    for (XmlRpc::XmlRpcValue::iterator it = robot_initial_state.begin(); it != robot_initial_state.end(); ++it)
-    {
-      joint_id = mj_name2id(mujoco_model, mjOBJ_JOINT, it->first.c_str());
-      joint_qpos_addr = mujoco_model->jnt_qposadr[joint_id];
-      mujoco_data->qpos[joint_qpos_addr] = it->second;
-    }
-  }
-  else
-  {
-    ROS_WARN("Failed to reset from param 'robot_initial_state'");
-  }
-
-  // compute forward kinematics for new pos
-  // mj_forward(mujoco_model, mujoco_data);
-
-  // run simulation to setup the new pos
-  // mj_step(mujoco_model, mujoco_data);
-
-  return true;
-}
-
 }  // namespace mujoco_ros_control
 
 int main(int argc, char** argv)

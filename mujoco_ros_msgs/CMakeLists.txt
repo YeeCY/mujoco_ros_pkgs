@@ -23,7 +23,6 @@ add_service_files(
   SetJointQPos.srv
   SetOptGeomGroup.srv
   SetFixedCamera.srv
-  Reset.srv
   SetCtrl.srv
 )
 

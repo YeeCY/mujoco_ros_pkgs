@@ -61,7 +61,6 @@
 #include "mujoco_ros_msgs/SetJointQPos.h"
 #include "mujoco_ros_msgs/SetOptGeomGroup.h"
 #include "mujoco_ros_msgs/SetFixedCamera.h"
-#include "mujoco_ros_msgs/Reset.h"
 #include "mujoco_ros_msgs/SetCtrl.h"
 
 // openGL stuff
@@ -160,10 +159,6 @@ protected:
   bool set_fixed_camera_callback(mujoco_ros_msgs::SetFixedCamera::Request& req, 
     mujoco_ros_msgs::SetFixedCamera::Response& res);
 
-  // reset simulation
-  bool reset_callback(mujoco_ros_msgs::Reset::Request& req,
-    mujoco_ros_msgs::Reset::Response& res);
-
   // transform type id to type name
   std::string geom_type_to_string(int geom_id);
 
@@ -207,13 +202,13 @@ protected:
 
   // publishing
   ros::Publisher objects_in_scene_publisher = robot_node_handle.advertise<mujoco_ros_msgs::ModelStates>
-                                                                         ("mujoco_ros/model_states", 1000);
+                                                                         ("mujoco_ros/model_states", 10);
   ros::Publisher joint_state_publisher = robot_node_handle.advertise<mujoco_ros_msgs::JointStates>
-                                                                         ("mujoco_ros/joint_states", 1000);
+                                                                         ("mujoco_ros/joint_states", 10);
   ros::Publisher site_state_publisher = robot_node_handle.advertise<mujoco_ros_msgs::SiteStates>
-                                                                         ("mujoco_ros/site_states", 1000);
+                                                                         ("mujoco_ros/site_states", 10);
   ros::Publisher body_state_publisher = robot_node_handle.advertise<mujoco_ros_msgs::BodyStates>
-                                                                         ("mujoco_ros/body_states", 1000);
+                                                                         ("mujoco_ros/body_states", 10);
 
   // subscribing
   // ros::Subscriber set_objects_in_scene_subscriber = robot_node_handle.subscribe("/mujoco_ros/set_model_state", 1000, MujocoRosControl::set_objects_in_scene_callback);
@@ -225,8 +220,6 @@ protected:
     "mujoco_ros/set_vopt_geomgroup", &MujocoRosControl::set_vopt_geomgroup_callback, this);
   ros::ServiceServer set_fixed_camera_server = robot_node_handle.advertiseService(
     "mujoco_ros/set_fixed_camera", &MujocoRosControl::set_fixed_camera_callback, this);
-  ros::ServiceServer reset_server = robot_node_handle.advertiseService(
-    "mujoco_ros/reset", &MujocoRosControl::reset_callback, this);
   ros::ServiceServer set_ctrl_server = robot_node_handle.advertiseService(
     "mujoco_ros/set_ctrl", &MujocoRosControl::set_ctrl_callback, this);
 };
