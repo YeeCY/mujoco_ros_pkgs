@@ -34,7 +34,8 @@ class Mujoco2Rviz():
         self._description_repo_path = rospy.get_param('~description_repo_path',
                                                       rospkg.RosPack().get_path('sr_description_common'))
         self._static_only = rospy.get_param('~static_only', True)
-        self._objects_states_subscriber = rospy.Subscriber('mujoco/model_states', ModelStates,
+        object_state_topic = rospy.get_param('~object_state_topic', 'mujoco/model_states')
+        self._objects_states_subscriber = rospy.Subscriber(object_state_topic, ModelStates,
                                                            self._objects_states_cb)
         self._collision_object_publisher = rospy.Publisher('/collision_object', CollisionObject, queue_size=2,
                                                            latch=True)
