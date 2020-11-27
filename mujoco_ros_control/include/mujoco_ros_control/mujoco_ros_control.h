@@ -58,6 +58,8 @@
 #include <transmission_interface/transmission_parser.h>
 
 // srvs
+#include <std_srvs/Trigger.h>
+
 #include "mujoco_ros_msgs/SetJointQPos.h"
 #include "mujoco_ros_msgs/SetOptGeomGroup.h"
 #include "mujoco_ros_msgs/SetFixedCamera.h"
@@ -96,6 +98,10 @@ public:
 
   // number of free joints in simulation
   unsigned int n_free_joints_;
+
+  // window width and height
+  int window_width_;
+  int window_height_;
 
 protected:
   // free or static object
@@ -154,6 +160,10 @@ protected:
   // set vopt geomgroup
   bool set_vopt_geomgroup_callback(mujoco_ros_msgs::SetOptGeomGroup::Request& req, 
     mujoco_ros_msgs::SetOptGeomGroup::Response& res);
+
+  // reset simulation
+  bool reset_callback(std_srvs::Trigger::Request& req,
+    std_srvs::Trigger::Response& res);
 
   // set fixed camera
   bool set_fixed_camera_callback(mujoco_ros_msgs::SetFixedCamera::Request& req, 
@@ -222,6 +232,8 @@ protected:
     "mujoco_ros/set_fixed_camera", &MujocoRosControl::set_fixed_camera_callback, this);
   ros::ServiceServer set_ctrl_server = robot_node_handle.advertiseService(
     "mujoco_ros/set_ctrl", &MujocoRosControl::set_ctrl_callback, this);
+  ros::ServiceServer reset_server = robot_node_handle.advertiseService(
+    "mujoco_ros/reset", &MujocoRosControl::reset_callback, this);
 };
 }  // namespace mujoco_ros_control
 #endif  // MUJOCO_ROS_CONTROL_MUJOCO_ROS_CONTROL_H

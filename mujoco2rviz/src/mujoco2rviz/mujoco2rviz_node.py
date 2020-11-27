@@ -52,7 +52,8 @@ class Mujoco2Rviz():
         for model_instance_name in self._model_cache.keys():
             self._model_cache[model_instance_name].operation = CollisionObject.REMOVE
             self._collision_object_publisher.publish(self._model_cache[model_instance_name])
-            rospy.sleep(1)
+            # (chongyi zheng): comment this out
+            # rospy.sleep(1)
         rospy.loginfo("All cleaned up, shutting down...")
 
     def _objects_states_cb(self, objects_states_msg):

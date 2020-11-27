@@ -5,11 +5,15 @@
   <arg name="robot_description_param" default="robot_description"/>
   <arg name="debug" default="false"/>
   <arg name="key_path" default="/home/yee/.mujoco/mujoco200/bin/mjkey.txt"/>
+  <arg name="window_width" default="1200"/>
+  <arg name="window_height" default="900"/>
 
   <node unless="$(arg debug)" name="mujoco_ros_control" pkg="mujoco_ros_control" type="mujoco_ros_control" output="screen">
     <param name="robot_model_path" value="$(arg robot_model_path)"/>
     <param name="robot_description_param" value="$(arg robot_description_param)"/>
     <param name="key_path" value="$(arg key_path)"/>
+    <param name="window_width" value="$(arg window_width)"/>
+    <param name="window_height" value="$(arg window_height)"/>
   </node>
 
   <node if="$(arg debug)" name="mujoco_ros_control" pkg="mujoco_ros_control" type="mujoco_ros_control" output="screen" launch-prefix="gdb -ex run -args">

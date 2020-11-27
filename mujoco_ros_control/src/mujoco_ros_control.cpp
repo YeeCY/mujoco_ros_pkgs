@@ -63,6 +63,10 @@ bool MujocoRosControl::init(ros::NodeHandle &nodehandle)
       ROS_ERROR("Failed to get param 'key_path', attempting activation with default ('%s')", key_path_.c_str());
     }
 
+    // get window size
+    nodehandle.getParam("mujoco_ros_control/window_width", window_width_);
+    nodehandle.getParam("mujoco_ros_control/window_height", window_height_);
+
     // activation license mujoco
     mj_activate(key_path_.c_str());
 
@@ -885,6 +889,34 @@ bool MujocoRosControl::set_vopt_geomgroup_callback(mujoco_ros_msgs::SetOptGeomGr
   return true;
 }
 
+bool MujocoRosControl::reset_callback(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res)
+{
+  XmlRpc::XmlRpcValue robot_initial_state;
+  int joint_id;
+  int joint_qpos_addr;
+
+  if (robot_node_handle.getParam("robot_initial_state", robot_initial_state))
+  {
+    for (XmlRpc::XmlRpcValue::iterator it = robot_initial_state.begin(); it != robot_initial_state.end(); ++it)
+    {
+      joint_id = mj_name2id(mujoco_model, mjOBJ_JOINT, it->first.c_str());
+      joint_qpos_addr = mujoco_model->jnt_qposadr[joint_id];
+      mujoco_data->qpos[joint_qpos_addr] = it->second;
+
+      res.message = "Reset successed";
+      res.success = true;
+    }
+  }
+  else
+  {
+    ROS_WARN("Failed to reset from param 'robot_initial_state'");
+    res.message = "Failed to reset from param 'robot_initial_state'";
+    res.success = false;
+  }
+
+  return true;
+}
+
 bool MujocoRosControl::set_fixed_camera_callback(mujoco_ros_msgs::SetFixedCamera::Request& req, mujoco_ros_msgs::SetFixedCamera::Response& res)
 {
   int32_t camera_id = req.camera_id;
@@ -920,7 +952,8 @@ int main(int argc, char** argv)
       mju_error("Could not initialize GLFW");
 
     // create window, make OpenGL context current, request v-sync
-    GLFWwindow* window = glfwCreateWindow(1200, 900, "MujocoROS", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(
+      mujoco_ros_control.window_width_, mujoco_ros_control.window_height_, "MujocoROS", NULL, NULL);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
