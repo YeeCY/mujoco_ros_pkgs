@@ -64,7 +64,7 @@ bool MujocoRosControl::init(ros::NodeHandle &nodehandle)
     }
 
     // visualize or not
-    nodehandle.getParam("mujoco_ros_control/visualize_", visualize_);
+    nodehandle.getParam("mujoco_ros_control/visualize", visualize_);
 
     // get window size
     nodehandle.getParam("mujoco_ros_control/window_width", window_width_);
