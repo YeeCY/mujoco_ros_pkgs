@@ -99,6 +99,9 @@ public:
   // number of free joints in simulation
   unsigned int n_free_joints_;
 
+  // visualize
+  bool visualize_;
+
   // window width and height
   int window_width_;
   int window_height_;

@@ -63,6 +63,9 @@ bool MujocoRosControl::init(ros::NodeHandle &nodehandle)
       ROS_ERROR("Failed to get param 'key_path', attempting activation with default ('%s')", key_path_.c_str());
     }
 
+    // visualize or not
+    nodehandle.getParam("mujoco_ros_control/visualize_", visualize_);
+
     // get window size
     nodehandle.getParam("mujoco_ros_control/window_width", window_width_);
     nodehandle.getParam("mujoco_ros_control/window_height", window_height_);
@@ -937,9 +940,6 @@ int main(int argc, char** argv)
 
     mujoco_ros_control::MujocoRosControl mujoco_ros_control;
 
-    mujoco_ros_control.visualization_utils =
-        &mujoco_ros_control::MujocoVisualizationUtils::getInstance();
-
     // initialize mujoco stuff
     if (!mujoco_ros_control.init(nh_))
     {
@@ -947,42 +947,61 @@ int main(int argc, char** argv)
       return 1;
     }
 
-    // init GLFW
-    if ( !glfwInit() )
-      mju_error("Could not initialize GLFW");
-
-    // create window, make OpenGL context current, request v-sync
-    GLFWwindow* window = glfwCreateWindow(
-      mujoco_ros_control.window_width_, mujoco_ros_control.window_height_, "MujocoROS", NULL, NULL);
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
-
-    // make context current
-    glfwMakeContextCurrent(window);
-
-    // initialize mujoco visualization functions
-    mujoco_ros_control.visualization_utils->init(mujoco_ros_control.mujoco_model, mujoco_ros_control.mujoco_data, window);
-
     // spin
     ros::AsyncSpinner spinner(1);
-    spinner.start();
 
-    // run main loop, target real-time simulation and 60 fps rendering
-    while ( ros::ok() && !glfwWindowShouldClose(window) )
+    if (mujoco_ros_control.visualize_)
     {
-      // advance interactive simulation for 1/60 sec
-      // Assuming MuJoCo can simulate faster than real-time, which it usually can,
-      // this loop will finish on time for the next frame to be rendered at 60 fps.
-      mjtNum sim_start = mujoco_ros_control.mujoco_data->time;
+      mujoco_ros_control.visualization_utils =
+          &mujoco_ros_control::MujocoVisualizationUtils::getInstance();
 
-      while ( mujoco_ros_control.mujoco_data->time - sim_start < 1.0/10.0 && ros::ok() ) // change the fps rate if controller become slow
+      // init GLFW
+      if ( !glfwInit() )
+        mju_error("Could not initialize GLFW");
+
+      // create window, make OpenGL context current, request v-sync
+      GLFWwindow* window = glfwCreateWindow(
+        mujoco_ros_control.window_width_, mujoco_ros_control.window_height_, "MujocoROS", NULL, NULL);
+      glfwMakeContextCurrent(window);
+      glfwSwapInterval(1);
+
+      // make context current
+      glfwMakeContextCurrent(window);
+
+      // initialize mujoco visualization functions
+      mujoco_ros_control.visualization_utils->init(mujoco_ros_control.mujoco_model, mujoco_ros_control.mujoco_data, window);
+
+      // start spin
+      spinner.start();
+
+      // run main loop, target real-time simulation and 60 fps rendering
+      while ( ros::ok() && !glfwWindowShouldClose(window) )
+      {
+        // advance interactive simulation for 1/60 sec
+        // Assuming MuJoCo can simulate faster than real-time, which it usually can,
+        // this loop will finish on time for the next frame to be rendered at 60 fps.
+        mjtNum sim_start = mujoco_ros_control.mujoco_data->time;
+
+        while ( mujoco_ros_control.mujoco_data->time - sim_start < 1.0/10.0 && ros::ok() ) // change the fps rate if controller become slow
+        {
+          mujoco_ros_control.update();
+        }
+        mujoco_ros_control.visualization_utils->update(window);
+      }
+
+      mujoco_ros_control.visualization_utils->terminate();
+    }
+    else
+    {
+      // start spin
+      spinner.start();
+
+      // run main loop, target real-time simulation and 60 fps rendering
+      while ( ros::ok())
       {
         mujoco_ros_control.update();
       }
-      mujoco_ros_control.visualization_utils->update(window);
     }
-
-    mujoco_ros_control.visualization_utils->terminate();
 
     return 0;
 }
