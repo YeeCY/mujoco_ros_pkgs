@@ -24,6 +24,9 @@ add_service_files(
   SetOptGeomGroup.srv
   SetFixedCamera.srv
   SetCtrl.srv
+  GetBodyStates.srv
+  GetJointStates.srv
+  GetSiteStates.srv
 )
 
 generate_messages(DEPENDENCIES ${MSG_DEPS})

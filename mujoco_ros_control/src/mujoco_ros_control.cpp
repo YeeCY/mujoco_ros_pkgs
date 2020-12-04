@@ -326,9 +326,9 @@ void MujocoRosControl::update()
   mj_step2(mujoco_model, mujoco_data);
 
   publish_objects_in_scene();
-  publish_joint_states();
-  publish_site_states();
-  publish_body_states();
+  // publish_joint_states();
+  // publish_site_states();
+  // publish_body_states();
 }
 
 // get the MuJoCo XML from the parameter server
@@ -927,6 +927,120 @@ bool MujocoRosControl::set_fixed_camera_callback(mujoco_ros_msgs::SetFixedCamera
   visualization_utils->get_cam()->fixedcamid = camera_id;
   visualization_utils->get_cam()->type = mjCAMERA_FIXED;
 
+  return true;
+}
+
+bool MujocoRosControl::get_body_states_callback(mujoco_ros_msgs::GetBodyStates::Request& req, mujoco_ros_msgs::GetBodyStates::Response& res)
+{
+  std::string body_name;
+  geometry_msgs::Pose pose;
+
+  for (int body_id = 0; body_id < mujoco_model->nbody; body_id++)
+  {
+    body_name = mj_id2name(mujoco_model, mjOBJ_BODY, body_id);
+    res.name.push_back(body_name);
+    
+    // reference: http://www.mujoco.org/forum/index.php?threads/cartesian-coordinates-of-body.3376/
+    pose.position.x = mujoco_data->xpos[3 * body_id];
+    pose.position.y = mujoco_data->xpos[3 * body_id + 1];
+    pose.position.z = mujoco_data->xpos[3 * body_id + 2];
+    pose.orientation.w = mujoco_data->xquat[4 * body_id];// mujoco xquat format = wxyz
+    pose.orientation.x = mujoco_data->xquat[4 * body_id + 1];
+    pose.orientation.y = mujoco_data->xquat[4 * body_id + 2];
+    pose.orientation.z = mujoco_data->xquat[4 * body_id + 3];
+    res.pose.push_back(pose);
+  }
+
+  return true;
+}
+
+bool MujocoRosControl::get_joint_states_callback(mujoco_ros_msgs::GetJointStates::Request& req, mujoco_ros_msgs::GetJointStates::Response& res)
+{
+  std::string joint_name;
+  std_msgs::Float64MultiArray position, velocity;
+  int joint_type, pos_ndim, vel_ndim, joint_qpos_addr, joint_qvel_addr;
+
+  for (int joint_id = 0; joint_id < n_dof_; joint_id++)
+  {
+    joint_name = mj_id2name(mujoco_model, mjOBJ_JOINT, joint_id);
+    joint_type = mujoco_model->jnt_type[joint_id];
+    joint_qpos_addr = mujoco_model->jnt_qposadr[joint_id];
+    joint_qvel_addr = mujoco_model->jnt_dofadr[joint_id];
+    switch (joint_type)
+    {
+      case mjJNT_FREE:
+        pos_ndim = 7;
+        vel_ndim = 6;
+        break;
+      case mjJNT_BALL:
+        pos_ndim = 4;
+        vel_ndim = 3;
+        break;
+      default:  // mjJNT_HINGE, mjJNT_SLIDE
+        pos_ndim = 1;
+        vel_ndim = 1;
+        break;
+    }
+
+    res.name.push_back(joint_name);
+    position.data.clear();
+    velocity.data.clear();
+    if (pos_ndim == 1)
+    {
+      position.data.push_back(mujoco_data->qpos[joint_qpos_addr]);
+    }
+    else
+    {
+      for (int idx = 0; idx < pos_ndim; idx++)
+      {
+        position.data.push_back(mujoco_data->qpos[joint_qpos_addr + idx]);
+      }
+    }
+
+    if (vel_ndim == 1)
+    {
+      velocity.data.push_back(mujoco_data->qvel[joint_qvel_addr]);
+    }
+    else
+    {
+      for (int idx = 0; idx < vel_ndim; idx++)
+      {
+        velocity.data.push_back(mujoco_data->qvel[joint_qvel_addr + idx]);
+      }
+    }
+    res.position.push_back(position);
+    res.velocity.push_back(velocity);
+  }
+  
+  return true;
+}
+
+bool MujocoRosControl::get_site_states_callback(mujoco_ros_msgs::GetSiteStates::Request& req, mujoco_ros_msgs::GetSiteStates::Response& res)
+{
+  std::string site_name;
+  std_msgs::Float64MultiArray position, rotation_matrix;
+
+  for (int site_id = 0; site_id < mujoco_model->nsite; site_id++)
+  {
+    site_name = mj_id2name(mujoco_model, mjOBJ_SITE, site_id);
+
+    res.name.push_back(site_name);
+    position.data.clear();
+    rotation_matrix.data.clear();
+    // reference: http://www.mujoco.org/forum/index.php?threads/cartesian-coordinates-of-body.3376/
+    for (int idx = 0; idx < 3; idx++)
+    {
+      position.data.push_back(mujoco_data->site_xpos[3 * site_id + idx]);
+    }
+
+    for (int idx = 0; idx < 9; idx++)
+    {
+      rotation_matrix.data.push_back(mujoco_data->site_xmat[9 * site_id + idx]);// row first layout
+    }
+    res.position.push_back(position);
+    res.rotation_matrix.push_back(rotation_matrix);
+  }
+  
   return true;
 }
 

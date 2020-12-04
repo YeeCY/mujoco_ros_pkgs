@@ -64,6 +64,9 @@
 #include "mujoco_ros_msgs/SetOptGeomGroup.h"
 #include "mujoco_ros_msgs/SetFixedCamera.h"
 #include "mujoco_ros_msgs/SetCtrl.h"
+#include "mujoco_ros_msgs/GetBodyStates.h"
+#include "mujoco_ros_msgs/GetJointStates.h"
+#include "mujoco_ros_msgs/GetSiteStates.h"
 
 // openGL stuff
 #include <glfw3.h>
@@ -172,6 +175,18 @@ protected:
   bool set_fixed_camera_callback(mujoco_ros_msgs::SetFixedCamera::Request& req, 
     mujoco_ros_msgs::SetFixedCamera::Response& res);
 
+  // get body states
+  bool get_body_states_callback(mujoco_ros_msgs::GetBodyStates::Request& req,
+    mujoco_ros_msgs::GetBodyStates::Response& res);
+  
+  // get joint states
+  bool get_joint_states_callback(mujoco_ros_msgs::GetJointStates::Request& req,
+    mujoco_ros_msgs::GetJointStates::Response& res);
+
+  // get site states
+  bool get_site_states_callback(mujoco_ros_msgs::GetSiteStates::Request& req,
+    mujoco_ros_msgs::GetSiteStates::Response& res);
+
   // transform type id to type name
   std::string geom_type_to_string(int geom_id);
 
@@ -237,6 +252,12 @@ protected:
     "mujoco_ros/set_ctrl", &MujocoRosControl::set_ctrl_callback, this);
   ros::ServiceServer reset_server = robot_node_handle.advertiseService(
     "mujoco_ros/reset", &MujocoRosControl::reset_callback, this);
+  ros::ServiceServer get_body_states_server = robot_node_handle.advertiseService(
+    "mujoco_ros/get_body_states", &MujocoRosControl::get_body_states_callback, this);
+  ros::ServiceServer get_joint_states_server = robot_node_handle.advertiseService(
+    "mujoco_ros/get_joint_states", &MujocoRosControl::get_joint_states_callback, this);
+  ros::ServiceServer get_site_states_server = robot_node_handle.advertiseService(
+    "mujoco_ros/get_site_states", &MujocoRosControl::get_site_states_callback, this);
 };
 }  // namespace mujoco_ros_control
 #endif  // MUJOCO_ROS_CONTROL_MUJOCO_ROS_CONTROL_H
