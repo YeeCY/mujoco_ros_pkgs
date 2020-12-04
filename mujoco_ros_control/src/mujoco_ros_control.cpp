@@ -1063,6 +1063,7 @@ int main(int argc, char** argv)
 
     // spin
     ros::AsyncSpinner spinner(1);
+    spinner.start();
 
     if (mujoco_ros_control.visualize_)
     {
@@ -1085,9 +1086,6 @@ int main(int argc, char** argv)
       // initialize mujoco visualization functions
       mujoco_ros_control.visualization_utils->init(mujoco_ros_control.mujoco_model, mujoco_ros_control.mujoco_data, window);
 
-      // start spin
-      spinner.start();
-
       // run main loop, target real-time simulation and 60 fps rendering
       while ( ros::ok() && !glfwWindowShouldClose(window) )
       {
@@ -1096,7 +1094,7 @@ int main(int argc, char** argv)
         // this loop will finish on time for the next frame to be rendered at 60 fps.
         mjtNum sim_start = mujoco_ros_control.mujoco_data->time;
 
-        while ( mujoco_ros_control.mujoco_data->time - sim_start < 1.0/10.0 && ros::ok() ) // change the fps rate if controller become slow
+        while ( mujoco_ros_control.mujoco_data->time - sim_start < 1.0/15.0 && ros::ok() ) // change the fps rate if controller become slow
         {
           mujoco_ros_control.update();
         }
@@ -1107,9 +1105,6 @@ int main(int argc, char** argv)
     }
     else
     {
-      // start spin
-      spinner.start();
-
       // run main loop, target real-time simulation and 60 fps rendering
       while ( ros::ok())
       {
