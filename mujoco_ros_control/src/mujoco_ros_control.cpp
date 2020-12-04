@@ -1063,7 +1063,6 @@ int main(int argc, char** argv)
 
     // spin
     ros::AsyncSpinner spinner(1);
-    spinner.start();
 
     if (mujoco_ros_control.visualize_)
     {
@@ -1086,6 +1085,9 @@ int main(int argc, char** argv)
       // initialize mujoco visualization functions
       mujoco_ros_control.visualization_utils->init(mujoco_ros_control.mujoco_model, mujoco_ros_control.mujoco_data, window);
 
+      // start spin
+      spinner.start();
+
       // run main loop, target real-time simulation and 60 fps rendering
       while ( ros::ok() && !glfwWindowShouldClose(window) )
       {
@@ -1105,6 +1107,9 @@ int main(int argc, char** argv)
     }
     else
     {
+      // start spin
+      spinner.start();
+
       // run main loop, target real-time simulation and 60 fps rendering
       while ( ros::ok())
       {
