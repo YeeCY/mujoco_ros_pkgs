@@ -219,6 +219,7 @@ protected:
   boost::shared_ptr<controller_manager::ControllerManager> controller_manager_;
 
   // simulated clock
+  bool use_sim_time_;
   ros::Publisher pub_clock_;
   int pub_clock_frequency_;
   ros::Time last_pub_clock_time_;

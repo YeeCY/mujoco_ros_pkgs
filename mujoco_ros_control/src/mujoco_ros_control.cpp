@@ -47,7 +47,7 @@ MujocoRosControl::~MujocoRosControl()
 
 bool MujocoRosControl::init(ros::NodeHandle &nodehandle)
 {
-      // Check that ROS has been initialized
+    // Check that ROS has been initialized
     if (!ros::isInitialized())
     {
         ROS_FATAL_STREAM_NAMED("mujoco_ros_control", "Unable to initialize Mujoco node.");
@@ -63,7 +63,10 @@ bool MujocoRosControl::init(ros::NodeHandle &nodehandle)
       ROS_ERROR("Failed to get param 'key_path', attempting activation with default ('%s')", key_path_.c_str());
     }
 
-    // visualize or not
+    // sim time
+    nodehandle.getParam("mujoco_ros_control/use_sim_time", use_sim_time_);
+
+    // visualize
     nodehandle.getParam("mujoco_ros_control/visualize", visualize_);
 
     // get window size
@@ -297,7 +300,15 @@ void MujocoRosControl::update()
 {
   publish_sim_time();
 
-  ros::Time sim_time = (ros::Time)mujoco_data->time;
+  ros::Time sim_time;
+  if (use_sim_time_)
+  {
+    sim_time = (ros::Time)mujoco_data->time;
+  }
+  else
+  {
+    sim_time = ros::Time::now();
+  }
   ros::Time sim_time_ros(sim_time.sec, sim_time.nsec);
 
   ros::Duration sim_period = sim_time_ros - last_update_sim_time_ros_;
@@ -919,6 +930,21 @@ bool MujocoRosControl::reset_callback(std_srvs::Trigger::Request& req, std_srvs:
     res.message = "Failed to reset from param 'robot_initial_state'";
     res.success = false;
   }
+
+  // reset sim time
+  // ROS_INFO_STREAM("Time now: " << ros::Time::now().toSec());
+  // mujoco_data->time = ros::Time().toSec();
+  // last_update_sim_time_ros_ = ros::Time();
+  // last_write_sim_time_ros_ = ros::Time();
+  // last_pub_clock_time_ = ros::Time();
+
+  // ros::Time current_time = (ros::Time)mujoco_data->time;
+  // rosgraph_msgs::Clock ros_time_;
+  // ros_time_.clock.fromSec(current_time.toSec());
+  // pub_clock_.publish(ros_time_);
+  // ros::Time::reset
+  // ros::Time::setNow(ros::Time());
+  // ROS_INFO_STREAM("Time now (reset): " << ros::Time::now().toSec());
 
   return true;
 }
