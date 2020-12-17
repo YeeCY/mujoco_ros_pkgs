@@ -64,7 +64,7 @@ bool MujocoRosControl::init(ros::NodeHandle &nodehandle)
     }
 
     // sim time
-    nodehandle.getParam("mujoco_ros_control/use_sim_time", use_sim_time_);
+    nodehandle.getParam("/use_sim_time", use_sim_time_);
 
     // visualize
     nodehandle.getParam("mujoco_ros_control/visualize", visualize_);
@@ -300,15 +300,7 @@ void MujocoRosControl::update()
 {
   publish_sim_time();
 
-  ros::Time sim_time;
-  if (use_sim_time_)
-  {
-    sim_time = (ros::Time)mujoco_data->time;
-  }
-  else
-  {
-    sim_time = ros::Time::now();
-  }
+  ros::Time sim_time = (ros::Time)mujoco_data->time;
   ros::Time sim_time_ros(sim_time.sec, sim_time.nsec);
 
   ros::Duration sim_period = sim_time_ros - last_update_sim_time_ros_;
