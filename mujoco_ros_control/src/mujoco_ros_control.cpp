@@ -329,9 +329,9 @@ void MujocoRosControl::update()
   mj_step2(mujoco_model, mujoco_data);
 
   publish_objects_in_scene();
-  // publish_joint_states();
-  // publish_site_states();
-  // publish_body_states();
+  publish_joint_states();
+  publish_site_states();
+  publish_body_states();
 }
 
 // get the MuJoCo XML from the parameter server
