@@ -334,7 +334,7 @@ void RobotHWSim::write(const ros::Time& time, const ros::Duration& period)
       {
         case EFFORT:
         {
-          if (joint.name.find(actuator.first.substr(0, actuator.first.length() - 4)) != std::string::npos)  // length "_torq" = 4
+          if (joint.name.find(actuator.first.substr(0, actuator.first.length() - 5)) != std::string::npos)  // length "_torq" = 5
           {
             mujoco_data_->ctrl[actuator.second.id] = joint.effort_command;
           }
@@ -343,7 +343,7 @@ void RobotHWSim::write(const ros::Time& time, const ros::Duration& period)
 
         case POSITION:
         {
-          if (joint.name.find(actuator.first.substr(0, actuator.first.length() - 3)) != std::string::npos)  // length "_pos" = 3
+          if (joint.name.find(actuator.first.substr(0, actuator.first.length() - 4)) != std::string::npos)  // length "_pos" = 3
           {
             mujoco_data_->ctrl[actuator.second.id] = joint.position_command;
           }
@@ -352,7 +352,7 @@ void RobotHWSim::write(const ros::Time& time, const ros::Duration& period)
 
         case POSITION_PID:
         {
-          if (joint.name.find(actuator.first.substr(0, actuator.first.length() - 3)) != std::string::npos)  // length "_pos" = 3
+          if (joint.name.find(actuator.first.substr(0, actuator.first.length() - 4)) != std::string::npos)  // length "_pos" = 4
           {
             double error;
 
