@@ -27,6 +27,7 @@ add_service_files(
   GetBodyStates.srv
   GetJointStates.srv
   GetSiteStates.srv
+  GetContacts.srv
 )
 
 generate_messages(DEPENDENCIES ${MSG_DEPS})

@@ -1065,6 +1065,20 @@ bool MujocoRosControl::get_site_states_callback(mujoco_ros_msgs::GetSiteStates::
   return true;
 }
 
+bool MujocoRosControl::get_contacts_callback(mujoco_ros_msgs::GetContacts::Request& req, mujoco_ros_msgs::GetContacts::Response& res)
+{
+  mjContact contact;
+  
+  for (int contact_id = 0; contact_id < mujoco_data->ncon; contact_id++)
+  {
+    contact = mujoco_data->contact[contact_id];
+    res.geom1.push_back(contact.geom1);
+    res.geom2.push_back(contact.geom2);
+  }
+
+  return true;
+}
+
 }  // namespace mujoco_ros_control
 
 int main(int argc, char** argv)
