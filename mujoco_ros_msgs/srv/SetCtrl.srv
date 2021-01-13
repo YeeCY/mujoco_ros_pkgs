@@ -1,2 +1,3 @@
 string[] name
+string[] index
 float64[] ctrl

@@ -688,8 +688,9 @@ void MujocoRosControl::publish_joint_states()
 {
   mujoco_ros_msgs::JointStates joint_states;
   std::string joint_name;
-  std_msgs::Float64MultiArray position, velocity;
+  std_msgs::Float64MultiArray position, velocity, mass_matrix;
   int joint_type, pos_ndim, vel_ndim, joint_qpos_addr, joint_qvel_addr;
+  int qvel_length = 0;
 
   for (int joint_id = 0; joint_id < n_dof_; joint_id++)
   {
@@ -728,6 +729,7 @@ void MujocoRosControl::publish_joint_states()
       }
     }
 
+    qvel_length += vel_ndim;
     if (vel_ndim == 1)
     {
       velocity.data.push_back(mujoco_data->qvel[joint_qvel_addr]);
@@ -743,6 +745,11 @@ void MujocoRosControl::publish_joint_states()
     joint_states.velocity.push_back(velocity);
   }
   
+  mass_matrix.data.clear();
+  mass_matrix.data.resize(qvel_length * qvel_length);
+  mj_fullM(mujoco_model, mass_matrix.data.data(), mujoco_data->qM);
+  joint_states.mass_matrix = mass_matrix;
+
   joint_state_publisher.publish(joint_states);
 }
 
@@ -750,7 +757,7 @@ void MujocoRosControl::publish_site_states()
 {
   mujoco_ros_msgs::SiteStates site_states;
   std::string site_name;
-  std_msgs::Float64MultiArray position, rotation_matrix;
+  std_msgs::Float64MultiArray position, rotation_matrix, jacobian_position, jacobian_orientation;
 
   for (int site_id = 0; site_id < mujoco_model->nsite; site_id++)
   {
@@ -759,6 +766,10 @@ void MujocoRosControl::publish_site_states()
     site_states.name.push_back(site_name);
     position.data.clear();
     rotation_matrix.data.clear();
+    jacobian_position.data.clear();
+    jacobian_orientation.data.clear();
+    jacobian_position.data.resize(3 * mujoco_model->nv);
+    jacobian_orientation.data.resize(3 * mujoco_model->nv);
     // reference: http://www.mujoco.org/forum/index.php?threads/cartesian-coordinates-of-body.3376/
     for (int idx = 0; idx < 3; idx++)
     {
@@ -771,6 +782,10 @@ void MujocoRosControl::publish_site_states()
     }
     site_states.position.push_back(position);
     site_states.rotation_matrix.push_back(rotation_matrix);
+
+    mj_jacSite(mujoco_model, mujoco_data, jacobian_position.data.data(), jacobian_orientation.data.data(), site_id);
+    site_states.jacobian_position.push_back(jacobian_position);
+    site_states.jacobian_orientation.push_back(jacobian_orientation);
   }
   
   site_state_publisher.publish(site_states);
@@ -871,6 +886,7 @@ bool MujocoRosControl::set_joint_qpos_callback(mujoco_ros_msgs::SetJointQPos::Re
 bool MujocoRosControl::set_ctrl_callback(mujoco_ros_msgs::SetCtrl::Request& req, mujoco_ros_msgs::SetCtrl::Response& res)
 {
   std::vector<std::string> names = req.name;
+  std::vector<int> indices = req.index;
   std::vector<double> ctrls = req.ctrl;
   int actuator_id;
 
@@ -978,8 +994,9 @@ bool MujocoRosControl::get_body_states_callback(mujoco_ros_msgs::GetBodyStates::
 bool MujocoRosControl::get_joint_states_callback(mujoco_ros_msgs::GetJointStates::Request& req, mujoco_ros_msgs::GetJointStates::Response& res)
 {
   std::string joint_name;
-  std_msgs::Float64MultiArray position, velocity;
+  std_msgs::Float64MultiArray position, velocity, mass_matrix;
   int joint_type, pos_ndim, vel_ndim, joint_qpos_addr, joint_qvel_addr;
+  int qvel_length = 0;
 
   for (int joint_id = 0; joint_id < n_dof_; joint_id++)
   {
@@ -1018,6 +1035,7 @@ bool MujocoRosControl::get_joint_states_callback(mujoco_ros_msgs::GetJointStates
       }
     }
 
+    qvel_length += vel_ndim;
     if (vel_ndim == 1)
     {
       velocity.data.push_back(mujoco_data->qvel[joint_qvel_addr]);
@@ -1033,13 +1051,18 @@ bool MujocoRosControl::get_joint_states_callback(mujoco_ros_msgs::GetJointStates
     res.velocity.push_back(velocity);
   }
   
+  mass_matrix.data.clear();
+  mass_matrix.data.resize(qvel_length * qvel_length);
+  mj_fullM(mujoco_model, mass_matrix.data.data(), mujoco_data->qM);
+  res.mass_matrix = mass_matrix;
+
   return true;
 }
 
 bool MujocoRosControl::get_site_states_callback(mujoco_ros_msgs::GetSiteStates::Request& req, mujoco_ros_msgs::GetSiteStates::Response& res)
 {
   std::string site_name;
-  std_msgs::Float64MultiArray position, rotation_matrix;
+  std_msgs::Float64MultiArray position, rotation_matrix, jacobian_position, jacobian_orientation;
 
   for (int site_id = 0; site_id < mujoco_model->nsite; site_id++)
   {
@@ -1048,6 +1071,10 @@ bool MujocoRosControl::get_site_states_callback(mujoco_ros_msgs::GetSiteStates::
     res.name.push_back(site_name);
     position.data.clear();
     rotation_matrix.data.clear();
+    jacobian_position.data.clear();
+    jacobian_orientation.data.clear();
+    jacobian_position.data.resize(3 * mujoco_model->nv);
+    jacobian_orientation.data.resize(3 * mujoco_model->nv);
     // reference: http://www.mujoco.org/forum/index.php?threads/cartesian-coordinates-of-body.3376/
     for (int idx = 0; idx < 3; idx++)
     {
@@ -1060,6 +1087,10 @@ bool MujocoRosControl::get_site_states_callback(mujoco_ros_msgs::GetSiteStates::
     }
     res.position.push_back(position);
     res.rotation_matrix.push_back(rotation_matrix);
+
+    mj_jacSite(mujoco_model, mujoco_data, jacobian_position.data.data(), jacobian_orientation.data.data(), site_id);
+    res.jacobian_position.push_back(jacobian_position);
+    res.jacobian_orientation.push_back(jacobian_orientation);
   }
   
   return true;
