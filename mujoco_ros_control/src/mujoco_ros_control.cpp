@@ -323,7 +323,7 @@ void MujocoRosControl::update()
   }
 
   // update the mujoco model with the result of the controller
-  robot_hw_sim_->write(sim_time_ros, sim_time_ros - last_write_sim_time_ros_);
+  // robot_hw_sim_->write(sim_time_ros, sim_time_ros - last_write_sim_time_ros_);
 
   last_write_sim_time_ros_ = sim_time_ros;
   mj_step2(mujoco_model, mujoco_data);
@@ -886,7 +886,6 @@ bool MujocoRosControl::set_joint_qpos_callback(mujoco_ros_msgs::SetJointQPos::Re
 bool MujocoRosControl::set_ctrl_callback(mujoco_ros_msgs::SetCtrl::Request& req, mujoco_ros_msgs::SetCtrl::Response& res)
 {
   std::vector<std::string> names = req.name;
-  std::vector<int> indices = req.index;
   std::vector<double> ctrls = req.ctrl;
   int actuator_id;
 
@@ -1062,7 +1061,7 @@ bool MujocoRosControl::get_joint_states_callback(mujoco_ros_msgs::GetJointStates
 bool MujocoRosControl::get_site_states_callback(mujoco_ros_msgs::GetSiteStates::Request& req, mujoco_ros_msgs::GetSiteStates::Response& res)
 {
   std::string site_name;
-  std_msgs::Float64MultiArray position, rotation_matrix, jacobian_position, jacobian_orientation, linear_velocity, angular_velocity;
+  std_msgs::Float64MultiArray position, rotation_matrix, jacobian_position, jacobian_orientation;
 
   for (int site_id = 0; site_id < mujoco_model->nsite; site_id++)
   {
@@ -1071,8 +1070,6 @@ bool MujocoRosControl::get_site_states_callback(mujoco_ros_msgs::GetSiteStates::
     res.name.push_back(site_name);
     position.data.clear();
     rotation_matrix.data.clear();
-    linear_velocity.data.clear();
-    angular_velocity.data.clear();
     jacobian_position.data.clear();
     jacobian_orientation.data.clear();
     jacobian_position.data.resize(3 * mujoco_model->nv);
@@ -1086,12 +1083,6 @@ bool MujocoRosControl::get_site_states_callback(mujoco_ros_msgs::GetSiteStates::
     for (int idx = 0; idx < 9; idx++)
     {
       rotation_matrix.data.push_back(mujoco_data->site_xmat[9 * site_id + idx]);// row first layout
-    }
-
-    for (int idx = 0; idx < 3; idx++)
-    {
-      linear_velocity.data.push_back(mujoco_data->site_xvelp[3 * site_id + idx]);
-      angular_velocity.data.push_back(mujoco_data->site_xvelr[3 * site_id + idx]);
     }
 
     res.position.push_back(position);
