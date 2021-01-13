@@ -1062,7 +1062,7 @@ bool MujocoRosControl::get_joint_states_callback(mujoco_ros_msgs::GetJointStates
 bool MujocoRosControl::get_site_states_callback(mujoco_ros_msgs::GetSiteStates::Request& req, mujoco_ros_msgs::GetSiteStates::Response& res)
 {
   std::string site_name;
-  std_msgs::Float64MultiArray position, rotation_matrix, jacobian_position, jacobian_orientation;
+  std_msgs::Float64MultiArray position, rotation_matrix, jacobian_position, jacobian_orientation, linear_velocity, angular_velocity;
 
   for (int site_id = 0; site_id < mujoco_model->nsite; site_id++)
   {
@@ -1071,6 +1071,8 @@ bool MujocoRosControl::get_site_states_callback(mujoco_ros_msgs::GetSiteStates::
     res.name.push_back(site_name);
     position.data.clear();
     rotation_matrix.data.clear();
+    linear_velocity.data.clear();
+    angular_velocity.data.clear();
     jacobian_position.data.clear();
     jacobian_orientation.data.clear();
     jacobian_position.data.resize(3 * mujoco_model->nv);
@@ -1085,6 +1087,13 @@ bool MujocoRosControl::get_site_states_callback(mujoco_ros_msgs::GetSiteStates::
     {
       rotation_matrix.data.push_back(mujoco_data->site_xmat[9 * site_id + idx]);// row first layout
     }
+
+    for (int idx = 0; idx < 3; idx++)
+    {
+      linear_velocity.data.push_back(mujoco_data->site_xvelp[3 * site_id + idx]);
+      angular_velocity.data.push_back(mujoco_data->site_xvelr[3 * site_id + idx]);
+    }
+
     res.position.push_back(position);
     res.rotation_matrix.push_back(rotation_matrix);
 
