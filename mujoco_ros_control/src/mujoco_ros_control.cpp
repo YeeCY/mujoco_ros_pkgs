@@ -63,9 +63,6 @@ bool MujocoRosControl::init(ros::NodeHandle &nodehandle)
       ROS_ERROR("Failed to get param 'key_path', attempting activation with default ('%s')", key_path_.c_str());
     }
 
-    // sim time
-    nodehandle.getParam("/use_sim_time", use_sim_time_);
-
     // visualize
     nodehandle.getParam("mujoco_ros_control/visualize", visualize_);
 
@@ -77,10 +74,10 @@ bool MujocoRosControl::init(ros::NodeHandle &nodehandle)
     mj_activate(key_path_.c_str());
 
     // publish clock for simulated time
-    pub_clock_ = nodehandle.advertise<rosgraph_msgs::Clock>("/clock", 10);
+    pub_clock_ = nodehandle.advertise<rosgraph_msgs::Clock>("clock", 10);
 
     // create robot node handle
-    robot_node_handle = ros::NodeHandle("/");
+    robot_node_handle = ros::NodeHandle();
 
     ROS_INFO_NAMED("mujoco_ros_control", "Starting mujoco_ros_control node in namespace: %s", robot_namespace_.c_str());
 

@@ -202,7 +202,7 @@ bool RobotHWSim::init_sim(
       if (joint.control_method != EFFORT)
       {
         // Initialize the PID controller. If no PID gain values are found
-        const ros::NodeHandle nh(robot_nh, "/mujoco_ros_control/pid_gains/" +
+        const ros::NodeHandle nh(robot_nh, "mujoco_ros_control/pid_gains/" +
                                 joint.name);
         if (joint.pid_controller.init(nh, true))
         {
