@@ -67,6 +67,7 @@
 #include "mujoco_ros_msgs/GetBodyStates.h"
 #include "mujoco_ros_msgs/GetJointStates.h"
 #include "mujoco_ros_msgs/GetSiteStates.h"
+#include "mujoco_ros_msgs/GetContacts.h"
 
 // openGL stuff
 #include <glfw3.h>
@@ -105,7 +106,8 @@ public:
   // visualize
   bool visualize_;
 
-  // window width and height
+  // window name, width, and height
+  std::string window_name_;
   int window_width_;
   int window_height_;
 
@@ -187,6 +189,10 @@ protected:
   bool get_site_states_callback(mujoco_ros_msgs::GetSiteStates::Request& req,
     mujoco_ros_msgs::GetSiteStates::Response& res);
 
+  // get contacts
+  bool get_contacts_callback(mujoco_ros_msgs::GetContacts::Request& req, 
+    mujoco_ros_msgs::GetContacts::Response& res);
+
   // transform type id to type name
   std::string geom_type_to_string(int geom_id);
 
@@ -258,6 +264,8 @@ protected:
     "mujoco_ros/get_joint_states", &MujocoRosControl::get_joint_states_callback, this);
   ros::ServiceServer get_site_states_server = robot_node_handle.advertiseService(
     "mujoco_ros/get_site_states", &MujocoRosControl::get_site_states_callback, this);
+  ros::ServiceServer get_contacts_server = robot_node_handle.advertiseService(
+    "mujoco_ros/get_contacts", &MujocoRosControl::get_contacts_callback, this);
 };
 }  // namespace mujoco_ros_control
 #endif  // MUJOCO_ROS_CONTROL_MUJOCO_ROS_CONTROL_H

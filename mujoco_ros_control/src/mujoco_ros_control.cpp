@@ -66,9 +66,10 @@ bool MujocoRosControl::init(ros::NodeHandle &nodehandle)
     // visualize
     nodehandle.getParam("mujoco_ros_control/visualize", visualize_);
 
-    // get window size
+    // get window size and name
     nodehandle.getParam("mujoco_ros_control/window_width", window_width_);
     nodehandle.getParam("mujoco_ros_control/window_height", window_height_);
+    nodehandle.getParam("mujoco_ros_control/window_name", window_name_);
 
     // activation license mujoco
     mj_activate(key_path_.c_str());
@@ -1062,6 +1063,20 @@ bool MujocoRosControl::get_site_states_callback(mujoco_ros_msgs::GetSiteStates::
   return true;
 }
 
+bool MujocoRosControl::get_contacts_callback(mujoco_ros_msgs::GetContacts::Request& req, mujoco_ros_msgs::GetContacts::Response& res)
+{
+  mjContact contact;
+  
+  for (int contact_id = 0; contact_id < mujoco_data->ncon; contact_id++)
+  {
+    contact = mujoco_data->contact[contact_id];
+    res.geom1.push_back(contact.geom1);
+    res.geom2.push_back(contact.geom2);
+  }
+
+  return true;
+}
+
 }  // namespace mujoco_ros_control
 
 int main(int argc, char** argv)
@@ -1093,7 +1108,7 @@ int main(int argc, char** argv)
 
       // create window, make OpenGL context current, request v-sync
       GLFWwindow* window = glfwCreateWindow(
-        mujoco_ros_control.window_width_, mujoco_ros_control.window_height_, "MujocoROS", NULL, NULL);
+        mujoco_ros_control.window_width_, mujoco_ros_control.window_height_, mujoco_ros_control.window_name_.c_str(), NULL, NULL);
       glfwMakeContextCurrent(window);
       glfwSwapInterval(1);
 
