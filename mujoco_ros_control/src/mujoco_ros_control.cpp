@@ -1129,9 +1129,17 @@ int main(int argc, char** argv)
       spinner.start();
 
       // run main loop, target real-time simulation and 60 fps rendering
-      while ( ros::ok())
+      while ( ros::ok() )
       {
-        mujoco_ros_control.update();
+        // advance interactive simulation for 1/60 sec
+        // Assuming MuJoCo can simulate faster than real-time, which it usually can,
+        // this loop will finish on time for the next frame to be rendered at 60 fps.
+        mjtNum sim_start = mujoco_ros_control.mujoco_data->time;
+
+        while ( mujoco_ros_control.mujoco_data->time - sim_start < 1.0/10.0 && ros::ok() ) // change the fps rate if controller become slow
+        {
+          mujoco_ros_control.update();
+        }
       }
     }
 
