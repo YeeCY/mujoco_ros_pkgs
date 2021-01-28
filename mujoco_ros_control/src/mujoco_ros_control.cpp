@@ -1129,7 +1129,7 @@ int main(int argc, char** argv)
         // this loop will finish on time for the next frame to be rendered at 60 fps.
         mjtNum sim_start = mujoco_ros_control.mujoco_data->time;
 
-        while ( mujoco_ros_control.mujoco_data->time - sim_start < 1.0/10.0 && ros::ok() ) // change the fps rate if controller become slow
+        while ( mujoco_ros_control.mujoco_data->time - sim_start < 1.0/60.0 && ros::ok() ) // change the fps rate if controller become slow
         {
           mujoco_ros_control.update();
         }
