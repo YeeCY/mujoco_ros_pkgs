@@ -337,6 +337,7 @@ void RobotHWSim::write(const ros::Time& time, const ros::Duration& period)
           if (joint.name.find(actuator.first.substr(0, actuator.first.length() - 5)) != std::string::npos)  // length "_torq" = 5
           {
             mujoco_data_->ctrl[actuator.second.id] = joint.effort_command;
+            // ROS_INFO_STREAM("joint: " << joint.name << ", actuator: " << actuator.first << ", effort_command: " << joint.effort_command);
           }
         }
         break;
