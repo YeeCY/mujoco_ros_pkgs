@@ -618,7 +618,7 @@ void MujocoRosControl::check_objects_in_scene()
   int num_of_joints_for_body;
   std::string object_name;
 
-  for (int object_id=0; object_id < num_of_bodies; object_id++)
+  for (int object_id = 0; object_id < num_of_bodies; object_id++)
   {
     object_name = mj_id2name(mujoco_model, 1, object_id);
     num_of_joints_for_body = mujoco_model->body_jntnum[object_id];

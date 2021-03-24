@@ -155,7 +155,7 @@ protected:
   void publish_body_states();
 
   // set free objects
-  void set_objects_in_scene_callback(const mujoco_ros_msgs::ModelStates& model_states_msg);
+  // void set_objects_in_scene_callback(const mujoco_ros_msgs::ModelStates& model_states_msg);
 
   // set joint qpos
   bool set_joint_qpos_callback(mujoco_ros_msgs::SetJointQPos::Request& req, 
